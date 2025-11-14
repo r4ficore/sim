@@ -1,4 +1,6 @@
 // js/renderer.js
+// Etap 3: renderer rysuje siatkę, obiekty środowiskowe i populację.
+import { CELL_OBJECT } from './world.js';
 // Etap 1: renderer rysuje siatkę i statyczną populację.
 
 export class WorldRenderer {
@@ -37,6 +39,51 @@ export class WorldRenderer {
       ctx.moveTo(0, py);
       ctx.lineTo(this.canvas.width, py);
       ctx.stroke();
+    }
+  }
+
+  drawEnvironment(world) {
+    const ctx = this.ctx;
+    const size = this.cellSize;
+    const margin = size * 0.2;
+    const cells = typeof world.getCellObjects === 'function' ? world.getCellObjects() : world.cellsObjects;
+
+    for (let y = 0; y < world.height; y++) {
+      for (let x = 0; x < world.width; x++) {
+        const cellObject = cells[y][x];
+        if (!cellObject) continue;
+
+        const px = x * size + margin;
+        const py = y * size + margin;
+        const rectSize = size - margin * 2;
+
+        if (cellObject === CELL_OBJECT.FOOD) {
+          ctx.fillStyle = '#6dd16b';
+          ctx.strokeStyle = '#0f380f';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.rect(px, py, rectSize, rectSize);
+          ctx.fill();
+          ctx.stroke();
+        } else if (cellObject === CELL_OBJECT.POISON) {
+          ctx.fillStyle = '#ff5252';
+          ctx.strokeStyle = '#7f1d1d';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.rect(px, py, rectSize, rectSize);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.strokeStyle = '#7f1d1d';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(px + rectSize, py + rectSize);
+          ctx.moveTo(px + rectSize, py);
+          ctx.lineTo(px, py + rectSize);
+          ctx.stroke();
+        }
+      }
     }
   }
 
@@ -80,6 +127,7 @@ export class WorldRenderer {
 
     this.clearCanvas(world.width, world.height);
     this.drawGrid(world.width, world.height);
+    this.drawEnvironment(world);
     this.drawCreatures(world);
   }
 }
