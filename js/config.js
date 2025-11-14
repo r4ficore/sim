@@ -1,4 +1,5 @@
 // js/config.js
+// Konfiguracja domyślna dla całej aplikacji.
 
 export const defaultConfig = {
   worldWidth: 40,
