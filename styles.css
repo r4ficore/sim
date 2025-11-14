@@ -60,6 +60,16 @@ body {
   font-weight: 600;
 }
 
+.warning {
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 193, 7, 0.45);
+  background: rgba(255, 193, 7, 0.12);
+  color: #ffd166;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
 .controls-group {
   padding: 0.75rem;
   border-radius: 6px;
@@ -80,6 +90,37 @@ body {
   font-size: 0.85rem;
 }
 
+.range-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.range-label span {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #9ae6b4;
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: #6dd16b;
+}
+
+input[type='range']:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.controls-group .hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: #888;
+}
+
 button {
   display: inline-block;
   margin: 0.15rem 0.15rem 0.15rem 0;
@@ -90,19 +131,19 @@ button {
   background: #2b2b2b;
   color: #eee;
   cursor: pointer;
-  transition: background 0.15s, transform 0.05s;
+  transition: background 0.15s, transform 0.05s, opacity 0.15s;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   background: #3a3a3a;
 }
 
-button:active {
+button:active:not(:disabled) {
   transform: scale(0.97);
 }
 
 button:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: default;
 }
 
