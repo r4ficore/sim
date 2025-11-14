@@ -1,5 +1,7 @@
 // js/ui.js
 // Etap 3: UI aktualizuje statystyki środowiska po każdym kroku.
+// Etap 2: UI zarządza światem, turą i statystykami.
+// Etap 1: UI zarządza światem i statyczną populacją.
 import { defaultConfig } from './config.js';
 import { Simulation } from './simulation.js';
 import { WorldRenderer } from './renderer.js';
@@ -72,12 +74,57 @@ function setControlsState(dom, state) {
   }
 }
 
+function renderWorldIfAvailable() {
+  const world = simulation?.getWorld();
+  if (world) {
+    renderer.renderWorld(world);
+  } else {
+    const config = simulation?.getConfig() ?? defaultConfig;
+    renderer.renderPlaceholder(config.worldWidth, config.worldHeight);
+  }
+}
+
+function setControlsState(dom, state) {
+  const { btnStart, btnStep, btnStartAuto, btnPause, btnReset } = dom;
+
+  if (state === 'initial') {
+    btnStart?.removeAttribute('disabled');
+    btnStep?.setAttribute('disabled', 'disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.setAttribute('disabled', 'disabled');
+    return;
+  }
+
+  if (state === 'running') {
+    btnStart?.setAttribute('disabled', 'disabled');
+    btnStep?.removeAttribute('disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.removeAttribute('disabled');
+  }
+
+  if (state === 'stopped') {
+    btnStart?.removeAttribute('disabled');
+    btnStep?.setAttribute('disabled', 'disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.setAttribute('disabled', 'disabled');
+  }
+}
+
 function attachButtonActions(dom) {
   dom.btnStart?.addEventListener('click', () => {
     console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 3).');
     const world = simulation.startNew();
     renderWorldIfAvailable();
     updateStatsPanel(dom);
+    console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 2).');
+    const world = simulation.startNew();
+    console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 1).');
+    simulation.startNew();
+    renderWorldIfAvailable();
+    updateStatsPanel(dom.statTick, dom.statPopulation);
     if (world) {
       setControlsState(dom, 'running');
     }
@@ -86,12 +133,17 @@ function attachButtonActions(dom) {
   dom.btnStep?.addEventListener('click', () => {
     console.log(
       '[ui] Step → wykonuję turę: metabolizm, ruch, środowisko i śmierć (Etap 3).'
+      '[ui] Step → wykonuję turę: metabolizm, ruch i sprawdzenie śmierci (Etap 2).'
     );
     const world = simulation.stepOnce();
     if (!world) return;
 
     renderWorldIfAvailable();
     updateStatsPanel(dom);
+    console.log('[ui] Step → logika tury pojawi się w Etapie 2.');
+    simulation.stepOnce();
+    renderWorldIfAvailable();
+    updateStatsPanel(dom.statTick, dom.statPopulation);
 
     if (world.getAliveCount() === 0) {
       console.info('[ui] Wszystkie istoty zmarły – wróć do stanu początkowego.');
@@ -114,6 +166,7 @@ function attachButtonActions(dom) {
     simulation.reset();
     renderWorldIfAvailable();
     updateStatsPanel(dom);
+    updateStatsPanel(dom.statTick, dom.statPopulation);
     setControlsState(dom, 'initial');
   });
 }
@@ -132,6 +185,7 @@ export function initUI() {
   setControlsState(dom, 'initial');
   renderWorldIfAvailable();
   updateStatsPanel(dom);
+  updateStatsPanel(dom.statTick, dom.statPopulation);
 
   attachButtonActions(dom);
 

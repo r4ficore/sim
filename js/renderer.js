@@ -1,6 +1,7 @@
 // js/renderer.js
 // Etap 3: renderer rysuje siatkę, obiekty środowiskowe i populację.
 import { CELL_OBJECT } from './world.js';
+// Etap 1: renderer rysuje siatkę i statyczną populację.
 
 export class WorldRenderer {
   constructor(canvas, cellSize = 15) {
