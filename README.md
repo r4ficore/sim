@@ -33,3 +33,23 @@ GitHub Pages obsługuje statyczne pliki bez dodatkowej konfiguracji. Najprostsza
 3. Upewnij się, że katalog publiczny wskazuje na lokalizację z `index.html` – po wejściu na adres domeny pliki powinny być serwowane jako statyczne.
 
 Nie jest potrzebne żadne dodatkowe środowisko wykonawcze. Jeżeli host oferuje wymuszony HTTPS lub własny katalog publiczny (np. `public_html`), wystarczy umieścić tam wszystkie pliki z repozytorium.
+
+## Rozwiązywanie konfliktów przy scalaniu (merge conflicts)
+
+Jeżeli GitHub wyświetla komunikat **“This branch has conflicts that must be resolved”**, wykonaj te kroki lokalnie:
+
+1. Zaktualizuj główną gałąź i połącz ją ze swoją gałęzią roboczą:
+   ```bash
+   git fetch origin
+   git checkout <twoja-gałąź>
+   git merge origin/main
+   ```
+2. W plikach oznaczonych przez Gita usuń sekcje pomiędzy `<<<<<<<`, `=======` i `>>>>>>>`, pozostawiając właściwą wersję kodu.
+3. Sprawdź stan repozytorium (`git status`), a następnie dodaj poprawione pliki i zatwierdź zmiany:
+   ```bash
+   git add <pliki-z-konfliktami>
+   git commit
+   git push
+   ```
+
+Alternatywnie można użyć przycisku **Resolve conflicts** bezpośrednio w interfejsie GitHuba, a po zapisaniu zmian wykonać „Commit merge”.
