@@ -1,4 +1,5 @@
 // js/simulation.js
+// Etap 2: zarządzanie światem oraz logiką pojedynczej tury.
 // Etap 1: zarządzanie światem i statystykami (bez logiki tury).
 import { defaultConfig } from './config.js';
 import { World } from './world.js';
@@ -23,18 +24,21 @@ export class Simulation {
     this.tick = this.world.tick;
     this.population = this.world.getAliveCount();
 
+    console.info('[simulation] startNew() – świat gotowy (Etap 2).');
+    return this.world;
     console.info('[simulation] startNew() – świat gotowy (Etap 1).');
   }
 
   stepOnce() {
     if (!this.world) {
-      console.warn('[simulation] stepOnce() – brak świata, Etap 1/2 uzupełni logikę.');
-      return;
+      console.warn('[simulation] stepOnce() – brak świata. Użyj przycisku Start.');
+      return null;
     }
 
     this.world.step();
     this.tick = this.world.tick;
     this.population = this.world.getAliveCount();
+    return this.world;
   }
 
   startAuto() {
@@ -59,6 +63,7 @@ export class Simulation {
     this.world = null;
     this.tick = 0;
     this.population = 0;
+    this.config = { ...this.baseConfig };
     console.info('[simulation] reset() – powrót do stanu początkowego.');
   }
 
@@ -78,5 +83,9 @@ export class Simulation {
 
   getWorld() {
     return this.world;
+  }
+
+  getConfig() {
+    return { ...this.config };
   }
 }

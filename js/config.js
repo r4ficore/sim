@@ -7,5 +7,6 @@ export const defaultConfig = {
   initialPopulation: 40,
   initialEnergyMin: 30,
   initialEnergyMax: 60,
+  metabolismCost: 1,
   cellSize: 15
 };

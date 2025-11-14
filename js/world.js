@@ -1,4 +1,5 @@
 // js/world.js
+// Etap 2: model świata z logiką jednej tury (metabolizm + ruch + śmierć).
 // Etap 1: model świata z inicjalną populacją (jeszcze bez logiki tury).
 import { Creature } from './creature.js';
 
@@ -47,6 +48,36 @@ export class World {
     });
   }
 
+  _wrapCoordinate(value, max) {
+    if (value < 0) return max - 1;
+    if (value >= max) return 0;
+    return value;
+  }
+
+  _moveCreature(creature) {
+    const direction = Math.floor(Math.random() * 4);
+    let { x, y } = creature;
+
+    switch (direction) {
+      case 0:
+        x += 1;
+        break;
+      case 1:
+        x -= 1;
+        break;
+      case 2:
+        y += 1;
+        break;
+      case 3:
+      default:
+        y -= 1;
+        break;
+    }
+
+    creature.x = this._wrapCoordinate(x, this.width);
+    creature.y = this._wrapCoordinate(y, this.height);
+  }
+
   initPopulation() {
     this.creatures = [];
     this.cellsObjects = this._createEmptyCells();
@@ -68,6 +99,28 @@ export class World {
   }
 
   step() {
-    console.warn('[world] step() zostanie zaimplementowane w Etapie 2.');
+    this.tick += 1;
+
+    const metabolismCost =
+      typeof this.config.metabolismCost === 'number'
+        ? this.config.metabolismCost
+        : 1;
+
+    this.creatures.forEach((creature) => {
+      if (!creature.alive) {
+        return;
+      }
+
+      creature.age += 1;
+      creature.energy -= metabolismCost;
+
+      if (creature.energy <= 0) {
+        creature.energy = 0;
+        creature.alive = false;
+        return;
+      }
+
+      this._moveCreature(creature);
+    });
   }
 }
