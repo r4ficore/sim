@@ -1,5 +1,5 @@
 // js/ui.js
-// Etap 0: tylko logika UI – bez faktycznej symulacji.
+// Etap 1: UI zarządza światem i statyczną populacją.
 import { defaultConfig } from './config.js';
 import { Simulation } from './simulation.js';
 import { WorldRenderer } from './renderer.js';
@@ -28,17 +28,25 @@ function updateStatsPanel(statTickEl, statPopulationEl) {
   statPopulationEl.textContent = String(population);
 }
 
+function renderWorldIfAvailable() {
+  const world = simulation?.getWorld();
+  if (world) {
+    renderer.renderWorld(world);
+  }
+}
+
 function attachButtonActions(dom) {
   dom.btnStart?.addEventListener('click', () => {
-    console.log('[ui] Start → przygotowuję pusty świat (Etap 1 doda populację).');
+    console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 1).');
     simulation.startNew();
-    renderer.renderPlaceholder(defaultConfig.worldWidth, defaultConfig.worldHeight);
+    renderWorldIfAvailable();
     updateStatsPanel(dom.statTick, dom.statPopulation);
   });
 
   dom.btnStep?.addEventListener('click', () => {
-    console.log('[ui] Step → symulacja jeszcze nie zaimplementowana.');
+    console.log('[ui] Step → logika tury pojawi się w Etapie 2.');
     simulation.stepOnce();
+    renderWorldIfAvailable();
     updateStatsPanel(dom.statTick, dom.statPopulation);
   });
 
