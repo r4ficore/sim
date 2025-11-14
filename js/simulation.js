@@ -1,4 +1,5 @@
 // js/simulation.js
+// Etap 3: zarządzanie światem, turą i statystykami środowiska.
 // Etapy 4–6: zarządzanie światem, rozmnażaniem, trybem autosymulacji i konfiguracją.
 // Etap 2: zarządzanie światem oraz logiką pojedynczej tury.
 // Etap 1: zarządzanie światem i statystykami (bez logiki tury).
@@ -83,6 +84,8 @@ export class Simulation {
     console.info('[simulation] startNew() – świat gotowy (Etap 6).');
     return this.world;
 
+    console.info('[simulation] startNew() – świat gotowy (Etap 3).');
+    return this.world;
     console.info('[simulation] startNew() – świat gotowy (Etap 2).');
     return this.world;
     console.info('[simulation] startNew() – świat gotowy (Etap 1).');

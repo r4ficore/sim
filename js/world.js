@@ -1,4 +1,5 @@
 // js/world.js
+// Etap 3: świat z logiką środowiska (jedzenie + trucizna) oraz interakcjami.
 // Etapy 4–5: świat z logiką środowiska, rozmnażaniem i walką.
 import { Creature } from './creature.js';
 

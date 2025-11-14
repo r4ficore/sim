@@ -1,4 +1,5 @@
 // js/ui.js
+// Etap 3: UI aktualizuje statystyki środowiska po każdym kroku.
 // Etap 6: UI z panelem konfiguracji, rozmnażaniem, walką oraz autosymulacją.
 // Etap 2: UI zarządza światem, turą i statystykami.
 // Etap 1: UI zarządza światem i statyczną populacją.
@@ -48,6 +49,57 @@ function getDomElements() {
     statTick: document.getElementById('stat-tick'),
     statPopulation: document.getElementById('stat-population'),
     statFood: document.getElementById('stat-food'),
+    statPoison: document.getElementById('stat-poison')
+  };
+}
+
+function updateStatsPanel({ statTick, statPopulation, statFood, statPoison }) {
+  if (!simulation) return;
+
+  const { tick, population, food, poison } = simulation.getStats();
+
+  if (statTick) statTick.textContent = String(tick);
+  if (statPopulation) statPopulation.textContent = String(population);
+  if (statFood) statFood.textContent = String(food);
+  if (statPoison) statPoison.textContent = String(poison);
+}
+
+function renderWorldIfAvailable() {
+  const world = simulation?.getWorld();
+  if (world) {
+    renderer.renderWorld(world);
+  } else {
+    const config = simulation?.getConfig() ?? defaultConfig;
+    renderer.renderPlaceholder(config.worldWidth, config.worldHeight);
+  }
+}
+
+function setControlsState(dom, state) {
+  const { btnStart, btnStep, btnStartAuto, btnPause, btnReset } = dom;
+
+  if (state === 'initial') {
+    btnStart?.removeAttribute('disabled');
+    btnStep?.setAttribute('disabled', 'disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.setAttribute('disabled', 'disabled');
+    return;
+  }
+
+  if (state === 'running') {
+    btnStart?.setAttribute('disabled', 'disabled');
+    btnStep?.removeAttribute('disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.removeAttribute('disabled');
+  }
+
+  if (state === 'stopped') {
+    btnStart?.removeAttribute('disabled');
+    btnStep?.setAttribute('disabled', 'disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.setAttribute('disabled', 'disabled');
     statPoison: document.getElementById('stat-poison'),
     inputSpeed: document.getElementById('input-speed'),
     speedValue: document.getElementById('speed-value'),
@@ -333,6 +385,10 @@ function setControlsState(dom, state) {
 
 function attachButtonActions(dom) {
   dom.btnStart?.addEventListener('click', () => {
+    console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 3).');
+    const world = simulation.startNew();
+    renderWorldIfAvailable();
+    updateStatsPanel(dom);
     console.log('[ui] Start → tworzę nowy świat zgodnie z bieżącą konfiguracją (Etap 6).');
     const overrides = readConfigOverrides(dom);
     const world = simulation.startNew(overrides);
@@ -364,11 +420,14 @@ function attachButtonActions(dom) {
       console.info('[ui] Wszystkie istoty zmarły – rozpocznij nowy świat lub zresetuj.');
       setControlsState(dom, CONTROL_STATE.FINISHED);
     console.log(
+      '[ui] Step → wykonuję turę: metabolizm, ruch, środowisko i śmierć (Etap 3).'
       '[ui] Step → wykonuję turę: metabolizm, ruch i sprawdzenie śmierci (Etap 2).'
     );
     const world = simulation.stepOnce();
     if (!world) return;
 
+    renderWorldIfAvailable();
+    updateStatsPanel(dom);
     console.log('[ui] Step → logika tury pojawi się w Etapie 2.');
     simulation.stepOnce();
     renderWorldIfAvailable();
@@ -434,6 +493,7 @@ function attachButtonActions(dom) {
     updateSpeedDisplay(dom);
     setControlsState(dom, CONTROL_STATE.INITIAL);
     renderWorldIfAvailable();
+    updateStatsPanel(dom);
     updateStatsPanel(dom.statTick, dom.statPopulation);
     setControlsState(dom, 'initial');
   });
@@ -458,9 +518,11 @@ export function initUI() {
   updateSpeedDisplay(dom);
   setControlsState(dom, 'initial');
   renderWorldIfAvailable();
+  updateStatsPanel(dom);
   updateStatsPanel(dom.statTick, dom.statPopulation);
 
   attachButtonActions(dom);
 
+  console.log('[ui] Interfejs gotowy – środowisko aktywne od Etapu 3.');
   console.log('[ui] Interfejs gotowy – konfiguracja parametrów, rozmnażanie i autotryb włączone.');
 }
