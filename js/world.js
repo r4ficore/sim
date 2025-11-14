@@ -1,5 +1,6 @@
 // js/world.js
 // Etap 3: świat z logiką środowiska (jedzenie + trucizna) oraz interakcjami.
+// Etapy 4–5: świat z logiką środowiska, rozmnażaniem i walką.
 import { Creature } from './creature.js';
 
 const CELL_OBJECT = {
@@ -91,6 +92,117 @@ export class World {
 
     creature.x = this._wrapCoordinate(x, this.width);
     creature.y = this._wrapCoordinate(y, this.height);
+  }
+
+  _collectCreaturesByCell(creatures) {
+    const map = new Map();
+    creatures.forEach((creature) => {
+      const key = `${creature.x},${creature.y}`;
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key).push(creature);
+    });
+    return map;
+  }
+
+  _canReproduce(creature) {
+    if (!creature.alive) return false;
+    if (creature.reproductionCooldown > 0) return false;
+    const threshold = this.config.reproductionEnergyThreshold ?? Infinity;
+    return creature.energy >= threshold;
+  }
+
+  _handleReproduction(creaturesInCell, offspringBuffer) {
+    if (creaturesInCell.length < 2) return;
+
+    const males = creaturesInCell
+      .filter((creature) => creature.sex === 'M' && this._canReproduce(creature))
+      .sort((a, b) => b.energy - a.energy);
+    const females = creaturesInCell
+      .filter((creature) => creature.sex === 'F' && this._canReproduce(creature))
+      .sort((a, b) => b.energy - a.energy);
+
+    if (males.length === 0 || females.length === 0) {
+      return;
+    }
+
+    const male = males[0];
+    const female = females[0];
+
+    const energyCost = this.config.reproductionEnergyCost ?? 0;
+    if (male.energy - energyCost <= 0 || female.energy - energyCost <= 0) {
+      return;
+    }
+
+    male.energy -= energyCost;
+    female.energy -= energyCost;
+
+    const cooldown = Math.max(0, this.config.reproductionCooldownTicks ?? 0);
+    male.reproductionCooldown = cooldown;
+    female.reproductionCooldown = cooldown;
+
+    const offspringEnergy = Math.max(
+      1,
+      this.config.reproductionOffspringEnergy ?? Math.floor((male.energy + female.energy) / 2)
+    );
+    const childSex = Math.random() < 0.5 ? 'M' : 'F';
+
+    const child = new Creature({
+      id: this._nextCreatureId++,
+      sex: childSex,
+      x: male.x,
+      y: male.y,
+      energy: offspringEnergy
+    });
+    child.reproductionCooldown = cooldown;
+    offspringBuffer.push(child);
+  }
+
+  _handleCombat(creaturesInCell) {
+    if (creaturesInCell.length < 2) return;
+
+    const penalty = Math.max(0, this.config.fightEnergyPenalty ?? 0);
+    const reward = Math.max(0, this.config.fightEnergyReward ?? 0);
+
+    const groupedBySex = creaturesInCell.reduce((acc, creature) => {
+      if (!acc[creature.sex]) {
+        acc[creature.sex] = [];
+      }
+      acc[creature.sex].push(creature);
+      return acc;
+    }, {});
+
+    Object.values(groupedBySex).forEach((group) => {
+      if (!Array.isArray(group) || group.length < 2) return;
+
+      group.sort((a, b) => b.energy - a.energy);
+      const fighterA = group[0];
+      const fighterB = group[1];
+
+      if (!fighterA.alive || !fighterB.alive) {
+        return;
+      }
+
+      const totalEnergy = Math.max(fighterA.energy + fighterB.energy, 1);
+      const threshold = Math.random() * totalEnergy;
+      const winner = threshold < fighterA.energy ? fighterA : fighterB;
+      const loser = winner === fighterA ? fighterB : fighterA;
+
+      if (!loser.alive) return;
+
+      if (penalty > 0) {
+        loser.energy -= penalty;
+        if (loser.energy <= 0) {
+          loser.energy = 0;
+          loser.alive = false;
+        }
+      }
+
+      if (reward > 0 && winner.alive) {
+        winner.energy += reward;
+      }
+    });
   }
 
   _placeObjectRandomly(objectType, maxCount) {
@@ -195,9 +307,15 @@ export class World {
 
     this._spawnEnvironmentalObjects();
 
+    const survivors = [];
+
     this.creatures.forEach((creature) => {
       if (!creature.alive) {
         return;
+      }
+
+      if (creature.reproductionCooldown > 0) {
+        creature.reproductionCooldown = Math.max(0, creature.reproductionCooldown - 1);
       }
 
       creature.age += 1;
@@ -211,6 +329,27 @@ export class World {
 
       this._moveCreature(creature);
       this._applyCellInteraction(creature);
+
+      if (creature.alive) {
+        survivors.push(creature);
+      }
+    });
+
+    if (survivors.length === 0) {
+      return;
+    }
+
+    const creaturesByCell = this._collectCreaturesByCell(survivors);
+    const offspringBuffer = [];
+
+    creaturesByCell.forEach((creaturesInCell) => {
+      this._handleReproduction(creaturesInCell, offspringBuffer);
+      this._handleCombat(creaturesInCell);
+    });
+
+    if (offspringBuffer.length > 0) {
+      this.creatures.push(...offspringBuffer);
+    }
     });
   }
 }
