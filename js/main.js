@@ -2,6 +2,6 @@
 import { initUI } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('[main] DOMContentLoaded');
+  console.log('[main] DOMContentLoaded – inicjuję warstwę UI (Etap 0)');
   initUI();
 });
