@@ -100,6 +100,56 @@ function setControlsState(dom, state) {
     btnStartAuto?.setAttribute('disabled', 'disabled');
     btnPause?.setAttribute('disabled', 'disabled');
     btnReset?.setAttribute('disabled', 'disabled');
+  };
+}
+
+function updateStatsPanel({ statTick, statPopulation, statFood, statPoison }) {
+  if (!simulation) return;
+
+  const { tick, population, food, poison } = simulation.getStats();
+
+  if (statTick) statTick.textContent = String(tick);
+  if (statPopulation) statPopulation.textContent = String(population);
+  if (statFood) statFood.textContent = String(food);
+  if (statPoison) statPoison.textContent = String(poison);
+}
+
+function renderWorldIfAvailable() {
+  const world = simulation?.getWorld();
+  if (world) {
+    renderer.renderWorld(world);
+  } else {
+    const config = simulation?.getConfig() ?? defaultConfig;
+    renderer.renderPlaceholder(config.worldWidth, config.worldHeight);
+  }
+}
+
+function setControlsState(dom, state) {
+  const { btnStart, btnStep, btnStartAuto, btnPause, btnReset } = dom;
+
+  if (state === 'initial') {
+    btnStart?.removeAttribute('disabled');
+    btnStep?.setAttribute('disabled', 'disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.setAttribute('disabled', 'disabled');
+    return;
+  }
+
+  if (state === 'running') {
+    btnStart?.setAttribute('disabled', 'disabled');
+    btnStep?.removeAttribute('disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.removeAttribute('disabled');
+  }
+
+  if (state === 'stopped') {
+    btnStart?.removeAttribute('disabled');
+    btnStep?.setAttribute('disabled', 'disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.setAttribute('disabled', 'disabled');
     statPoison: document.getElementById('stat-poison'),
     inputSpeed: document.getElementById('input-speed'),
     speedValue: document.getElementById('speed-value'),
