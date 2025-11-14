@@ -7,5 +7,12 @@ export const defaultConfig = {
   initialPopulation: 40,
   initialEnergyMin: 30,
   initialEnergyMax: 60,
+  metabolismCost: 1,
+  foodSpawnAttempts: 2,
+  poisonSpawnAttempts: 1,
+  maxFoodOnMap: 50,
+  maxPoisonOnMap: 30,
+  foodEnergyGain: 20,
+  poisonEnergyPenalty: 25,
   cellSize: 15
 };
