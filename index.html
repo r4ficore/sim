@@ -17,6 +17,12 @@
         <section id="controls-panel">
           <h2>Sterowanie</h2>
 
+          <div class="warning" id="file-protocol-warning" role="alert" hidden>
+            <strong>Uwaga:</strong> Aby załadować moduły JS, uruchom projekt przez prosty
+            serwer HTTP (np. <code>python -m http.server</code>). Otwarcie pliku
+            <code>index.html</code> bezpośrednio z dysku może blokować importy modułów.
+          </div>
+
           <div class="controls-group">
             <h3>Symulacja</h3>
             <button id="btn-start">Start (przygotuj świat)</button>
@@ -49,6 +55,16 @@
       </main>
     </div>
 
+    <script>
+      (function showFileProtocolWarning() {
+        if (window.location.protocol === 'file:') {
+          const warning = document.getElementById('file-protocol-warning');
+          if (warning) {
+            warning.hidden = false;
+          }
+        }
+      })();
+    </script>
     <script type="module" src="js/main.js"></script>
   </body>
 </html>

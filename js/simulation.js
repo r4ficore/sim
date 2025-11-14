@@ -24,17 +24,19 @@ export class Simulation {
     this.population = this.world.getAliveCount();
 
     console.info('[simulation] startNew() – świat gotowy (Etap 2).');
+    return this.world;
   }
 
   stepOnce() {
     if (!this.world) {
       console.warn('[simulation] stepOnce() – brak świata. Użyj przycisku Start.');
-      return;
+      return null;
     }
 
     this.world.step();
     this.tick = this.world.tick;
     this.population = this.world.getAliveCount();
+    return this.world;
   }
 
   startAuto() {
@@ -59,6 +61,7 @@ export class Simulation {
     this.world = null;
     this.tick = 0;
     this.population = 0;
+    this.config = { ...this.baseConfig };
     console.info('[simulation] reset() – powrót do stanu początkowego.');
   }
 
@@ -78,5 +81,9 @@ export class Simulation {
 
   getWorld() {
     return this.world;
+  }
+
+  getConfig() {
+    return { ...this.config };
   }
 }
