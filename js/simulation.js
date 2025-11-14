@@ -1,10 +1,12 @@
 // js/simulation.js
-// Etap 0: szkic klasy Simulation – logika pojawi się w kolejnych etapach.
+// Etap 2: zarządzanie światem oraz logiką pojedynczej tury.
 import { defaultConfig } from './config.js';
+import { World } from './world.js';
 
 export class Simulation {
   constructor(baseConfig = defaultConfig) {
-    this.config = { ...baseConfig };
+    this.baseConfig = { ...baseConfig };
+    this.config = { ...this.baseConfig };
     this.world = null;
     this.tick = 0;
     this.population = 0;
@@ -13,22 +15,26 @@ export class Simulation {
   }
 
   startNew(overrides = {}) {
-    this.config = { ...this.config, ...overrides };
-    this.world = null; // Etap 1 zajmie się stworzeniem świata.
-    this.tick = 0;
-    this.population = 0;
-    console.info('[simulation] startNew() – świat pojawi się w Etapie 1.');
+    this.stopAuto();
+    this.config = { ...this.baseConfig, ...overrides };
+    this.world = new World(this.config);
+    this.world.initPopulation();
+
+    this.tick = this.world.tick;
+    this.population = this.world.getAliveCount();
+
+    console.info('[simulation] startNew() – świat gotowy (Etap 2).');
   }
 
   stepOnce() {
     if (!this.world) {
-      console.warn('[simulation] stepOnce() – brak świata, Etap 1/2 uzupełni logikę.');
+      console.warn('[simulation] stepOnce() – brak świata. Użyj przycisku Start.');
       return;
     }
 
     this.world.step();
     this.tick = this.world.tick;
-    this.population = this.world.creatures.filter((c) => c.alive).length;
+    this.population = this.world.getAliveCount();
   }
 
   startAuto() {
@@ -39,8 +45,8 @@ export class Simulation {
     if (this.autoInterval) {
       clearInterval(this.autoInterval);
       this.autoInterval = null;
+      console.info('[simulation] stopAuto() – timer zatrzymany (Etap 5 doda autotryb).');
     }
-    console.warn('[simulation] stopAuto() – pełne działanie pojawi się w Etapie 5.');
   }
 
   setSpeed(ticksPerSecond = 1) {
@@ -57,9 +63,20 @@ export class Simulation {
   }
 
   getStats() {
+    if (this.world) {
+      return {
+        tick: this.world.tick,
+        population: this.world.getAliveCount()
+      };
+    }
+
     return {
       tick: this.tick,
       population: this.population
     };
+  }
+
+  getWorld() {
+    return this.world;
   }
 }

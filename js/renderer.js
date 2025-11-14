@@ -1,5 +1,5 @@
 // js/renderer.js
-// Etap 0: renderer potrafi narysować pustą siatkę.
+// Etap 1: renderer rysuje siatkę i statyczną populację.
 
 export class WorldRenderer {
   constructor(canvas, cellSize = 15) {
@@ -40,14 +40,46 @@ export class WorldRenderer {
     }
   }
 
+  drawCreatures(world) {
+    const ctx = this.ctx;
+    const size = this.cellSize;
+    const radius = (size * 0.6) / 2;
+
+    world.creatures.forEach((creature) => {
+      if (!creature.alive) return;
+      const centerX = creature.x * size + size / 2;
+      const centerY = creature.y * size + size / 2;
+
+      let fillColor = '#cccccc';
+      if (creature.sex === 'M') {
+        fillColor = '#4da3ff';
+      } else if (creature.sex === 'F') {
+        fillColor = '#ff70d1';
+      }
+
+      ctx.beginPath();
+      ctx.fillStyle = fillColor;
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 1;
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    });
+  }
+
   renderPlaceholder(width, height) {
     this.clearCanvas(width, height);
     this.drawGrid(width, height);
   }
 
   renderWorld(world) {
-    console.warn('[renderer] renderWorld() zostanie uzupełnione w Etapie 1.');
-    if (!world) return;
-    this.renderPlaceholder(world.width, world.height);
+    if (!world) {
+      console.warn('[renderer] renderWorld() – brak świata do narysowania.');
+      return;
+    }
+
+    this.clearCanvas(world.width, world.height);
+    this.drawGrid(world.width, world.height);
+    this.drawCreatures(world);
   }
 }
