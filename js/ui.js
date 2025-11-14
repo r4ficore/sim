@@ -1,4 +1,5 @@
 // js/ui.js
+// Etap 0: tylko logika UI – bez faktycznej symulacji.
 import { defaultConfig } from './config.js';
 import { Simulation } from './simulation.js';
 import { WorldRenderer } from './renderer.js';
@@ -6,87 +7,74 @@ import { WorldRenderer } from './renderer.js';
 let simulation = null;
 let renderer = null;
 
+function getDomElements() {
+  return {
+    canvas: document.getElementById('world-canvas'),
+    btnStart: document.getElementById('btn-start'),
+    btnStep: document.getElementById('btn-step'),
+    btnStartAuto: document.getElementById('btn-start-auto'),
+    btnPause: document.getElementById('btn-pause'),
+    btnReset: document.getElementById('btn-reset'),
+    statTick: document.getElementById('stat-tick'),
+    statPopulation: document.getElementById('stat-population')
+  };
+}
+
+function updateStatsPanel(statTickEl, statPopulationEl) {
+  if (!statTickEl || !statPopulationEl || !simulation) return;
+
+  const { tick, population } = simulation.getStats();
+  statTickEl.textContent = String(tick);
+  statPopulationEl.textContent = String(population);
+}
+
+function attachButtonActions(dom) {
+  dom.btnStart?.addEventListener('click', () => {
+    console.log('[ui] Start → przygotowuję pusty świat (Etap 1 doda populację).');
+    simulation.startNew();
+    renderer.renderPlaceholder(defaultConfig.worldWidth, defaultConfig.worldHeight);
+    updateStatsPanel(dom.statTick, dom.statPopulation);
+  });
+
+  dom.btnStep?.addEventListener('click', () => {
+    console.log('[ui] Step → symulacja jeszcze nie zaimplementowana.');
+    simulation.stepOnce();
+    updateStatsPanel(dom.statTick, dom.statPopulation);
+  });
+
+  dom.btnStartAuto?.addEventListener('click', () => {
+    console.log('[ui] Start AUTO → funkcja pojawi się w późniejszym etapie.');
+    simulation.startAuto();
+  });
+
+  dom.btnPause?.addEventListener('click', () => {
+    console.log('[ui] Pause → zatrzymam autosymulację gdy będzie gotowa.');
+    simulation.stopAuto();
+  });
+
+  dom.btnReset?.addEventListener('click', () => {
+    console.log('[ui] Reset → czyszczenie sceny do stanu początkowego.');
+    simulation.reset();
+    renderer.renderPlaceholder(defaultConfig.worldWidth, defaultConfig.worldHeight);
+    updateStatsPanel(dom.statTick, dom.statPopulation);
+  });
+}
+
 export function initUI() {
-  console.log('[ui] initUI start');
+  const dom = getDomElements();
 
-  const canvas = document.getElementById('world-canvas');
-  const btnStart = document.getElementById('btn-start');
-  const btnStep = document.getElementById('btn-step');
-  const btnStartAuto = document.getElementById('btn-start-auto');
-  const btnPause = document.getElementById('btn-pause');
-  const btnReset = document.getElementById('btn-reset');
-
-  const statTick = document.getElementById('stat-tick');
-  const statPopulation = document.getElementById('stat-population');
-
-  if (!canvas) {
-    console.error('[ui] Nie znaleziono canvasu!');
+  if (!dom.canvas) {
+    console.error('[ui] Nie znaleziono elementu canvas!');
     return;
   }
 
-  simulation = new Simulation();
-  renderer = new WorldRenderer(canvas, defaultConfig.cellSize);
+  simulation = new Simulation(defaultConfig);
+  renderer = new WorldRenderer(dom.canvas, defaultConfig.cellSize);
 
-  // Na start – pusta siatka
-  renderer.renderEmptyGrid(defaultConfig.worldWidth, defaultConfig.worldHeight);
-  updateStats();
+  renderer.renderPlaceholder(defaultConfig.worldWidth, defaultConfig.worldHeight);
+  updateStatsPanel(dom.statTick, dom.statPopulation);
 
-  function updateStats() {
-    if (!simulation.world) {
-      if (statTick) statTick.textContent = '0';
-      if (statPopulation) statPopulation.textContent = '0';
-      return;
-    }
+  attachButtonActions(dom);
 
-    if (statTick) {
-      statTick.textContent = String(simulation.world.tick);
-    }
-    if (statPopulation) {
-      statPopulation.textContent = String(simulation.world.creatures.length);
-    }
-  }
-
-  function startWorld() {
-    console.log('[ui] Tworzenie nowego świata...');
-    simulation.createWorld();
-    renderer.renderWorld(simulation.world);
-    updateStats();
-  }
-
-  btnStart?.addEventListener('click', () => {
-    console.log('[ui] Start clicked – tworzymy świat i rysujemy populację');
-    startWorld();
-  });
-
-  btnStep?.addEventListener('click', () => {
-    console.log('[ui] Step clicked – tura (na razie tylko tick++)');
-
-    if (!simulation.world) {
-      // jeśli ktoś kliknie Step przed Start → najpierw zbuduj świat
-      startWorld();
-      return;
-    }
-
-    simulation.step();
-    renderer.renderWorld(simulation.world);
-    updateStats();
-  });
-
-  btnStartAuto?.addEventListener('click', () => {
-    console.log('[ui] Start AUTO clicked – autosymulacja będzie w późniejszym etapie');
-  });
-
-  btnPause?.addEventListener('click', () => {
-    console.log('[ui] Pause clicked – pauza/autosymulacja dopiero w kolejnych etapach');
-  });
-
-  btnReset?.addEventListener('click', () => {
-    console.log('[ui] Reset clicked – czyszczę świat');
-
-    simulation = new Simulation();
-    renderer.renderEmptyGrid(defaultConfig.worldWidth, defaultConfig.worldHeight);
-    updateStats();
-  });
-
-  console.log('[ui] initUI done');
+  console.log('[ui] Interfejs gotowy – czekamy na kolejne etapy.');
 }
