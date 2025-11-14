@@ -1,46 +1,54 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head>
-  <meta charset="UTF-8" />
-  <title>Symulacja ewolucji – prototyp</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <div id="app">
-    <header id="app-header">
-      <h1>Symulacja ewolucji – prototyp</h1>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Symulacja ewolucji – prototyp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="app-header">
+        <h1>Symulacja ewolucji – prototyp</h1>
+        <p class="subtitle">Etap 0 – tylko layout i podstawowe sterowanie UI</p>
+      </header>
 
-    <main id="app-main">
-      <section id="controls-panel">
-        <h2>Sterowanie</h2>
+      <main id="app-main">
+        <section id="controls-panel">
+          <h2>Sterowanie</h2>
 
-        <div class="controls-group">
-          <h3>Symulacja</h3>
-          <button id="btn-start">Start (przygotuj świat)</button>
-          <button id="btn-step">Krok (tura)</button>
-          <button id="btn-start-auto">Start AUTO</button>
-          <button id="btn-pause">Pause</button>
-          <button id="btn-reset">Reset</button>
-        </div>
+          <div class="controls-group">
+            <h3>Symulacja</h3>
+            <button id="btn-start">Start (przygotuj świat)</button>
+            <button id="btn-step">Krok (tura)</button>
+            <button id="btn-start-auto">Start AUTO</button>
+            <button id="btn-pause">Pause</button>
+            <button id="btn-reset">Reset</button>
+          </div>
 
-        <div class="controls-group">
-          <h3>Status (placeholder)</h3>
-          <p>Tik: <span id="stat-tick">0</span></p>
-          <p>Populacja: <span id="stat-population">0</span></p>
-        </div>
-      </section>
+          <div class="controls-group">
+            <h3>Status</h3>
+            <p>
+              Tik: <span id="stat-tick" aria-live="polite">0</span>
+            </p>
+            <p>
+              Populacja: <span id="stat-population" aria-live="polite">0</span>
+            </p>
+          </div>
+        </section>
 
-      <section id="canvas-panel">
-        <h2>Świat</h2>
-        <canvas id="world-canvas" width="600" height="600">
-          Twoja przeglądarka nie wspiera elementu canvas.
-        </canvas>
-      </section>
-    </main>
-  </div>
+        <section id="canvas-panel">
+          <h2>Świat</h2>
+          <canvas id="world-canvas" width="600" height="600">
+            Twoja przeglądarka nie wspiera elementu canvas.
+          </canvas>
+          <p class="canvas-caption">
+            Tu w kolejnych etapach będziemy rysować populację i obiekty środowiska.
+          </p>
+        </section>
+      </main>
+    </div>
 
-  <script type="module" src="js/main.js"></script>
-</body>
+    <script type="module" src="js/main.js"></script>
+  </body>
 </html>
