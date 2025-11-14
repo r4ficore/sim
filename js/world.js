@@ -1,33 +1,20 @@
 // js/world.js
-import { Creature } from './creature.js';
-
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+// Etap 0: szkic klasy World – pełna logika dojdzie w kolejnych etapach.
 
 export class World {
   constructor(config) {
     this.width = config.worldWidth;
     this.height = config.worldHeight;
-    this.config = config;
-
     this.tick = 0;
     this.creatures = [];
+    this.cellsObjects = [];
   }
 
   initPopulation() {
-    const { initialPopulation, initialEnergyMin, initialEnergyMax } = this.config;
+    console.warn('[world] initPopulation() zostanie uzupełnione w Etapie 1.');
+  }
 
-    this.creatures = [];
-
-    for (let i = 0; i < initialPopulation; i++) {
-      const sex = Math.random() < 0.5 ? 'M' : 'F';
-      const x = Math.floor(Math.random() * this.width);
-      const y = Math.floor(Math.random() * this.height);
-      const energy = randomInt(initialEnergyMin, initialEnergyMax);
-
-      const creature = new Creature(i, sex, x, y, energy);
-      this.creatures.push(creature);
-    }
+  step() {
+    console.warn('[world] step() zostanie zaimplementowane w Etapie 2.');
   }
 }
