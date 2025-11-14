@@ -10,7 +10,7 @@
     <div id="app">
       <header id="app-header">
         <h1>Symulacja ewolucji – prototyp</h1>
-        <p class="subtitle">Etapy 4–5 – rozmnażanie, walka i tryb auto</p>
+        <p class="subtitle">Etap 6 – panel parametrów i tryb auto</p>
       </header>
 
       <main id="app-main">
@@ -30,6 +30,190 @@
             <button id="btn-start-auto">Start AUTO</button>
             <button id="btn-pause">Pause</button>
             <button id="btn-reset">Reset</button>
+          </div>
+
+          <div class="controls-group">
+            <h3>Parametry początkowe</h3>
+            <form id="config-form">
+              <div class="config-grid">
+                <label class="config-field">
+                  <span>Szerokość świata</span>
+                  <input
+                    type="number"
+                    id="input-world-width"
+                    min="10"
+                    max="120"
+                    step="1"
+                    data-affects-canvas="true"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Wysokość świata</span>
+                  <input
+                    type="number"
+                    id="input-world-height"
+                    min="10"
+                    max="120"
+                    step="1"
+                    data-affects-canvas="true"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Początkowa populacja</span>
+                  <input
+                    type="number"
+                    id="input-initial-population"
+                    min="0"
+                    max="200"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Energia start (min)</span>
+                  <input
+                    type="number"
+                    id="input-initial-energy-min"
+                    min="1"
+                    max="200"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Energia start (max)</span>
+                  <input
+                    type="number"
+                    id="input-initial-energy-max"
+                    min="1"
+                    max="300"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Koszt metabolizmu</span>
+                  <input
+                    type="number"
+                    id="input-metabolism"
+                    min="0"
+                    max="20"
+                    step="0.5"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Próby spawnu jedzenia / turę</span>
+                  <input
+                    type="number"
+                    id="input-food-spawn"
+                    min="0"
+                    max="20"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Próby spawnu trucizny / turę</span>
+                  <input
+                    type="number"
+                    id="input-poison-spawn"
+                    min="0"
+                    max="20"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Maks. jedzenia na mapie</span>
+                  <input
+                    type="number"
+                    id="input-max-food"
+                    min="0"
+                    max="400"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Maks. trucizny na mapie</span>
+                  <input
+                    type="number"
+                    id="input-max-poison"
+                    min="0"
+                    max="400"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Próg energii do rozmnażania</span>
+                  <input
+                    type="number"
+                    id="input-reproduction-threshold"
+                    min="0"
+                    max="200"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Koszt rozmnażania</span>
+                  <input
+                    type="number"
+                    id="input-reproduction-cost"
+                    min="0"
+                    max="200"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Cooldown rozmnażania (tury)</span>
+                  <input
+                    type="number"
+                    id="input-reproduction-cooldown"
+                    min="0"
+                    max="50"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Energia potomka</span>
+                  <input
+                    type="number"
+                    id="input-reproduction-offspring"
+                    min="1"
+                    max="200"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Kara za przegraną walkę</span>
+                  <input
+                    type="number"
+                    id="input-fight-penalty"
+                    min="0"
+                    max="200"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Nagroda za wygraną walkę</span>
+                  <input
+                    type="number"
+                    id="input-fight-reward"
+                    min="0"
+                    max="200"
+                    step="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Domyślna prędkość AUTO (tury/s)</span>
+                  <input
+                    type="number"
+                    id="input-auto-speed-default"
+                    min="0.1"
+                    max="20"
+                    step="0.1"
+                  />
+                </label>
+              </div>
+              <div class="config-actions">
+                <button type="button" id="btn-config-defaults">Przywróć domyślne</button>
+              </div>
+              <p class="hint">Zmiany są używane przy następnym przycisku „Start”.</p>
+            </form>
           </div>
 
           <div class="controls-group">

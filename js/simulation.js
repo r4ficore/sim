@@ -1,5 +1,5 @@
 // js/simulation.js
-// Etapy 4–5: zarządzanie światem, rozmnażaniem oraz trybem autosymulacji.
+// Etapy 4–6: zarządzanie światem, rozmnażaniem, trybem autosymulacji i konfiguracją.
 import { defaultConfig } from './config.js';
 import { World } from './world.js';
 
@@ -77,7 +77,7 @@ export class Simulation {
     this.population = this.world.getAliveCount();
     this.autoSpeed = this._clampSpeed(this.config.autoTicksPerSecond ?? this.autoSpeed);
 
-    console.info('[simulation] startNew() – świat gotowy (Etapy 4–5).');
+    console.info('[simulation] startNew() – świat gotowy (Etap 6).');
     return this.world;
   }
 
@@ -167,13 +167,19 @@ export class Simulation {
     return Boolean(this.autoInterval);
   }
 
-  reset() {
+  reset(options = {}) {
+    const { revertConfig = false } = options;
     this.stopAuto({ triggerCallback: false });
     this.world = null;
     this.tick = 0;
     this.population = 0;
-    this.config = { ...this.baseConfig };
-    this.autoSpeed = this._clampSpeed(this.config.autoTicksPerSecond ?? 1);
+
+    if (revertConfig) {
+      this.config = { ...this.baseConfig };
+    }
+
+    const speedSource = this.config.autoTicksPerSecond ?? this.autoSpeed ?? 1;
+    this.autoSpeed = this._clampSpeed(speedSource);
   }
 
   getStats() {

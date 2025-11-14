@@ -1,5 +1,5 @@
 // js/ui.js
-// Etapy 4–5: UI obsługuje rozmnażanie, walkę oraz autosymulację.
+// Etap 6: UI z panelem konfiguracji, rozmnażaniem, walką oraz autosymulacją.
 import { defaultConfig } from './config.js';
 import { Simulation } from './simulation.js';
 import { WorldRenderer } from './renderer.js';
@@ -10,6 +10,26 @@ const CONTROL_STATE = {
   AUTO: 'auto',
   FINISHED: 'finished'
 };
+
+const CONFIG_FIELD_DEFINITIONS = [
+  { id: 'input-world-width', key: 'worldWidth', type: 'int', min: 10, max: 120, affectsCanvas: true },
+  { id: 'input-world-height', key: 'worldHeight', type: 'int', min: 10, max: 120, affectsCanvas: true },
+  { id: 'input-initial-population', key: 'initialPopulation', type: 'int', min: 0, max: 400 },
+  { id: 'input-initial-energy-min', key: 'initialEnergyMin', type: 'int', min: 1, max: 400 },
+  { id: 'input-initial-energy-max', key: 'initialEnergyMax', type: 'int', min: 1, max: 500 },
+  { id: 'input-metabolism', key: 'metabolismCost', type: 'float', min: 0, max: 25 },
+  { id: 'input-food-spawn', key: 'foodSpawnAttempts', type: 'int', min: 0, max: 50 },
+  { id: 'input-poison-spawn', key: 'poisonSpawnAttempts', type: 'int', min: 0, max: 50 },
+  { id: 'input-max-food', key: 'maxFoodOnMap', type: 'int', min: 0, max: 800 },
+  { id: 'input-max-poison', key: 'maxPoisonOnMap', type: 'int', min: 0, max: 800 },
+  { id: 'input-reproduction-threshold', key: 'reproductionEnergyThreshold', type: 'int', min: 0, max: 400 },
+  { id: 'input-reproduction-cost', key: 'reproductionEnergyCost', type: 'int', min: 0, max: 400 },
+  { id: 'input-reproduction-cooldown', key: 'reproductionCooldownTicks', type: 'int', min: 0, max: 200 },
+  { id: 'input-reproduction-offspring', key: 'reproductionOffspringEnergy', type: 'int', min: 1, max: 400 },
+  { id: 'input-fight-penalty', key: 'fightEnergyPenalty', type: 'int', min: 0, max: 400 },
+  { id: 'input-fight-reward', key: 'fightEnergyReward', type: 'int', min: 0, max: 400 },
+  { id: 'input-auto-speed-default', key: 'autoTicksPerSecond', type: 'float', min: 0.1, max: 20 }
+];
 
 let simulation = null;
 let renderer = null;
@@ -22,18 +42,131 @@ function getDomElements() {
     btnStartAuto: document.getElementById('btn-start-auto'),
     btnPause: document.getElementById('btn-pause'),
     btnReset: document.getElementById('btn-reset'),
+    btnConfigDefaults: document.getElementById('btn-config-defaults'),
     statTick: document.getElementById('stat-tick'),
     statPopulation: document.getElementById('stat-population'),
     statFood: document.getElementById('stat-food'),
     statPoison: document.getElementById('stat-poison'),
     inputSpeed: document.getElementById('input-speed'),
-    speedValue: document.getElementById('speed-value')
+    speedValue: document.getElementById('speed-value'),
+    configForm: document.getElementById('config-form')
   };
 }
 
-function updateStatsPanel({ statTick, statPopulation, statFood, statPoison }) {
+function getCurrentConfigSnapshot() {
+  if (simulation) {
+    return simulation.getConfig();
+  }
+  return { ...defaultConfig };
+}
+
+function sanitizeValue(fieldDef, rawValue) {
+  if (rawValue === '' || rawValue === null || rawValue === undefined) {
+    return null;
+  }
+
+  const parsed = fieldDef.type === 'float' ? parseFloat(rawValue) : parseInt(rawValue, 10);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+
+  let value = parsed;
+  if (typeof fieldDef.min === 'number') {
+    value = Math.max(fieldDef.min, value);
+  }
+  if (typeof fieldDef.max === 'number') {
+    value = Math.min(fieldDef.max, value);
+  }
+  if (fieldDef.type === 'int') {
+    value = Math.round(value);
+  }
+  return value;
+}
+
+function populateConfigForm(dom, sourceConfig) {
+  const { configForm } = dom;
+  if (!configForm) return;
+
+  CONFIG_FIELD_DEFINITIONS.forEach((field) => {
+    const input = configForm.querySelector(`#${field.id}`);
+    if (!input) return;
+
+    const value = sourceConfig[field.key];
+    if (value !== undefined && value !== null) {
+      input.value = String(value);
+    }
+  });
+}
+
+function readConfigOverrides(dom) {
+  const { configForm } = dom;
+  const currentConfig = getCurrentConfigSnapshot();
+  const overrides = {};
+
+  if (!configForm) {
+    return overrides;
+  }
+
+  CONFIG_FIELD_DEFINITIONS.forEach((field) => {
+    const input = configForm.querySelector(`#${field.id}`);
+    if (!input) return;
+
+    const sanitized = sanitizeValue(field, input.value);
+    const fallback = currentConfig[field.key] ?? defaultConfig[field.key];
+    const finalValue = sanitized ?? fallback;
+
+    overrides[field.key] = finalValue;
+    if (Number.isFinite(finalValue)) {
+      input.value = String(finalValue);
+    }
+  });
+
+  if (
+    overrides.initialEnergyMin !== undefined &&
+    overrides.initialEnergyMax !== undefined &&
+    overrides.initialEnergyMin > overrides.initialEnergyMax
+  ) {
+    const temp = overrides.initialEnergyMin;
+    overrides.initialEnergyMin = overrides.initialEnergyMax;
+    overrides.initialEnergyMax = temp;
+    const minInput = configForm.querySelector('#input-initial-energy-min');
+    const maxInput = configForm.querySelector('#input-initial-energy-max');
+    if (minInput) minInput.value = String(overrides.initialEnergyMin);
+    if (maxInput) maxInput.value = String(overrides.initialEnergyMax);
+  }
+
+  if (overrides.worldWidth !== undefined && overrides.worldHeight !== undefined) {
+    const maxPopulation = overrides.worldWidth * overrides.worldHeight;
+    if (overrides.initialPopulation !== undefined) {
+      overrides.initialPopulation = Math.max(0, Math.min(overrides.initialPopulation, maxPopulation));
+      const popInput = configForm.querySelector('#input-initial-population');
+      if (popInput) {
+        popInput.value = String(overrides.initialPopulation);
+      }
+    }
+    if (overrides.maxFoodOnMap !== undefined) {
+      overrides.maxFoodOnMap = Math.min(overrides.maxFoodOnMap, maxPopulation);
+      const foodInput = configForm.querySelector('#input-max-food');
+      if (foodInput) {
+        foodInput.value = String(overrides.maxFoodOnMap);
+      }
+    }
+    if (overrides.maxPoisonOnMap !== undefined) {
+      overrides.maxPoisonOnMap = Math.min(overrides.maxPoisonOnMap, maxPopulation);
+      const poisonInput = configForm.querySelector('#input-max-poison');
+      if (poisonInput) {
+        poisonInput.value = String(overrides.maxPoisonOnMap);
+      }
+    }
+  }
+
+  return overrides;
+}
+
+function updateStatsPanel(dom) {
   if (!simulation) return;
 
+  const { statTick, statPopulation, statFood, statPoison } = dom;
   const { tick, population, food, poison } = simulation.getStats();
 
   if (statTick) statTick.textContent = String(tick);
@@ -42,18 +175,27 @@ function updateStatsPanel({ statTick, statPopulation, statFood, statPoison }) {
   if (statPoison) statPoison.textContent = String(poison);
 }
 
-function renderWorldIfAvailable() {
+function renderPlaceholderFromForm(dom) {
+  const overrides = readConfigOverrides(dom);
+  const width = overrides.worldWidth ?? defaultConfig.worldWidth;
+  const height = overrides.worldHeight ?? defaultConfig.worldHeight;
+  renderer.renderPlaceholder(width, height);
+}
+
+function renderWorldIfAvailable(dom) {
   const world = simulation?.getWorld();
   if (world) {
     renderer.renderWorld(world);
   } else {
-    const config = simulation?.getConfig() ?? defaultConfig;
-    renderer.renderPlaceholder(config.worldWidth, config.worldHeight);
+    renderPlaceholderFromForm(dom);
   }
 }
 
-function updateSpeedDisplay({ inputSpeed, speedValue }) {
-  if (!simulation || !inputSpeed) return;
+function updateSpeedDisplay(dom) {
+  if (!simulation) return;
+
+  const { inputSpeed, speedValue } = dom;
+  if (!inputSpeed) return;
 
   const speed = simulation.getAutoSpeed();
   inputSpeed.value = String(speed);
@@ -79,6 +221,31 @@ function setupSpeedControl(dom) {
     const newSpeed = parseFloat(event.target.value);
     simulation.setSpeed(newSpeed);
     updateSpeedDisplay(dom);
+  });
+}
+
+function setupConfigForm(dom) {
+  populateConfigForm(dom, getCurrentConfigSnapshot());
+
+  dom.btnConfigDefaults?.addEventListener('click', () => {
+    populateConfigForm(dom, defaultConfig);
+    if (!simulation.getWorld()) {
+      renderPlaceholderFromForm(dom);
+    } else {
+      // Zaktualizuj podgląd konfiguracji na przyszłość.
+      readConfigOverrides(dom);
+    }
+  });
+
+  dom.configForm?.addEventListener('input', (event) => {
+    if (!(event.target instanceof HTMLInputElement)) {
+      return;
+    }
+    const field = CONFIG_FIELD_DEFINITIONS.find((item) => item.id === event.target.id);
+    readConfigOverrides(dom);
+    if (!simulation.getWorld() && field?.affectsCanvas) {
+      renderPlaceholderFromForm(dom);
+    }
   });
 }
 
@@ -125,9 +292,10 @@ function setControlsState(dom, state) {
 
 function attachButtonActions(dom) {
   dom.btnStart?.addEventListener('click', () => {
-    console.log('[ui] Start → tworzę nowy świat, populację oraz środowisko (Etap 4).');
-    const world = simulation.startNew();
-    renderWorldIfAvailable();
+    console.log('[ui] Start → tworzę nowy świat zgodnie z bieżącą konfiguracją (Etap 6).');
+    const overrides = readConfigOverrides(dom);
+    const world = simulation.startNew(overrides);
+    renderWorldIfAvailable(dom);
     updateStatsPanel(dom);
     updateSpeedDisplay(dom);
     if (world) {
@@ -136,13 +304,11 @@ function attachButtonActions(dom) {
   });
 
   dom.btnStep?.addEventListener('click', () => {
-    console.log(
-      '[ui] Step → metabolizm, ruch, środowisko, rozmnażanie i walka (Etap 4).' 
-    );
+    console.log('[ui] Step → metabolizm, środowisko, rozmnażanie i walka.');
     const world = simulation.stepOnce();
     if (!world) return;
 
-    renderWorldIfAvailable();
+    renderWorldIfAvailable(dom);
     updateStatsPanel(dom);
 
     if (world.getAliveCount() === 0) {
@@ -152,14 +318,14 @@ function attachButtonActions(dom) {
   });
 
   dom.btnStartAuto?.addEventListener('click', () => {
-    console.log('[ui] Start AUTO → uruchamiam autosymulację (Etap 5).');
+    console.log('[ui] Start AUTO → uruchamiam autosymulację.');
     const started = simulation.startAuto(
       () => {
-        renderWorldIfAvailable();
+        renderWorldIfAvailable(dom);
         updateStatsPanel(dom);
       },
       () => {
-        renderWorldIfAvailable();
+        renderWorldIfAvailable(dom);
         updateStatsPanel(dom);
         const world = simulation.getWorld();
         if (world && world.getAliveCount() > 0) {
@@ -181,7 +347,7 @@ function attachButtonActions(dom) {
       return;
     }
 
-    console.log('[ui] Pause → zatrzymuję autosymulację (Etap 5).');
+    console.log('[ui] Pause → zatrzymuję autosymulację.');
     const stopped = simulation.stopAuto();
     if (!stopped) {
       return;
@@ -193,14 +359,14 @@ function attachButtonActions(dom) {
     } else {
       setControlsState(dom, CONTROL_STATE.FINISHED);
     }
-    renderWorldIfAvailable();
+    renderWorldIfAvailable(dom);
     updateStatsPanel(dom);
   });
 
   dom.btnReset?.addEventListener('click', () => {
-    console.log('[ui] Reset → czyszczenie sceny do stanu początkowego.');
+    console.log('[ui] Reset → czyszczenie sceny do stanu początkowego, konfiguracja pozostaje.');
     simulation.reset();
-    renderWorldIfAvailable();
+    renderWorldIfAvailable(dom);
     updateStatsPanel(dom);
     updateSpeedDisplay(dom);
     setControlsState(dom, CONTROL_STATE.INITIAL);
@@ -219,12 +385,13 @@ export function initUI() {
   renderer = new WorldRenderer(dom.canvas, defaultConfig.cellSize);
 
   setupSpeedControl(dom);
+  setupConfigForm(dom);
   setControlsState(dom, CONTROL_STATE.INITIAL);
-  renderWorldIfAvailable();
+  renderWorldIfAvailable(dom);
   updateStatsPanel(dom);
   updateSpeedDisplay(dom);
 
   attachButtonActions(dom);
 
-  console.log('[ui] Interfejs gotowy – rozmnażanie, walka i autotryb włączone.');
+  console.log('[ui] Interfejs gotowy – konfiguracja parametrów, rozmnażanie i autotryb włączone.');
 }
