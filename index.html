@@ -10,12 +10,18 @@
     <div id="app">
       <header id="app-header">
         <h1>Symulacja ewolucji – prototyp</h1>
-        <p class="subtitle">Etap 0 – tylko layout i podstawowe sterowanie UI</p>
+        <p class="subtitle">Etap 6 – panel parametrów i tryb auto</p>
       </header>
 
       <main id="app-main">
         <section id="controls-panel">
           <h2>Sterowanie</h2>
+
+          <div class="warning" id="file-protocol-warning" role="alert" hidden>
+            <strong>Uwaga:</strong> Aby załadować moduły JS, uruchom projekt przez prosty
+            serwer HTTP (np. <code>python -m http.server</code>). Otwarcie pliku
+            <code>index.html</code> bezpośrednio z dysku może blokować importy modułów.
+          </div>
 
           <div class="controls-group">
             <h3>Symulacja</h3>
@@ -27,6 +33,207 @@
           </div>
 
           <div class="controls-group">
+            <h3>Parametry początkowe</h3>
+            <form id="config-form">
+              <div class="config-grid">
+                <label class="config-field">
+                  <span>Szerokość świata</span>
+                  <input
+                    type="number"
+                    id="input-world-width"
+                    min="10"
+                    max="120"
+                    step="1"
+                    value="40"
+                    data-affects-canvas="true"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Wysokość świata</span>
+                  <input
+                    type="number"
+                    id="input-world-height"
+                    min="10"
+                    max="120"
+                    step="1"
+                    value="40"
+                    data-affects-canvas="true"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Początkowa populacja</span>
+                  <input
+                    type="number"
+                    id="input-initial-population"
+                    min="0"
+                    max="200"
+                    step="1"
+                    value="40"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Energia start (min)</span>
+                  <input
+                    type="number"
+                    id="input-initial-energy-min"
+                    min="1"
+                    max="200"
+                    step="1"
+                    value="30"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Energia start (max)</span>
+                  <input
+                    type="number"
+                    id="input-initial-energy-max"
+                    min="1"
+                    max="300"
+                    step="1"
+                    value="60"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Koszt metabolizmu</span>
+                  <input
+                    type="number"
+                    id="input-metabolism"
+                    min="0"
+                    max="20"
+                    step="0.5"
+                    value="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Próby spawnu jedzenia / turę</span>
+                  <input
+                    type="number"
+                    id="input-food-spawn"
+                    min="0"
+                    max="20"
+                    step="1"
+                    value="2"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Próby spawnu trucizny / turę</span>
+                  <input
+                    type="number"
+                    id="input-poison-spawn"
+                    min="0"
+                    max="20"
+                    step="1"
+                    value="1"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Maks. jedzenia na mapie</span>
+                  <input
+                    type="number"
+                    id="input-max-food"
+                    min="0"
+                    max="400"
+                    step="1"
+                    value="50"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Maks. trucizny na mapie</span>
+                  <input
+                    type="number"
+                    id="input-max-poison"
+                    min="0"
+                    max="400"
+                    step="1"
+                    value="30"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Próg energii do rozmnażania</span>
+                  <input
+                    type="number"
+                    id="input-reproduction-threshold"
+                    min="0"
+                    max="200"
+                    step="1"
+                    value="55"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Koszt rozmnażania</span>
+                  <input
+                    type="number"
+                    id="input-reproduction-cost"
+                    min="0"
+                    max="200"
+                    step="1"
+                    value="18"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Cooldown rozmnażania (tury)</span>
+                  <input
+                    type="number"
+                    id="input-reproduction-cooldown"
+                    min="0"
+                    max="50"
+                    step="1"
+                    value="5"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Energia potomka</span>
+                  <input
+                    type="number"
+                    id="input-reproduction-offspring"
+                    min="1"
+                    max="200"
+                    step="1"
+                    value="35"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Kara za przegraną walkę</span>
+                  <input
+                    type="number"
+                    id="input-fight-penalty"
+                    min="0"
+                    max="200"
+                    step="1"
+                    value="22"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Nagroda za wygraną walkę</span>
+                  <input
+                    type="number"
+                    id="input-fight-reward"
+                    min="0"
+                    max="200"
+                    step="1"
+                    value="10"
+                  />
+                </label>
+                <label class="config-field">
+                  <span>Domyślna prędkość AUTO (tury/s)</span>
+                  <input
+                    type="number"
+                    id="input-auto-speed-default"
+                    min="0.1"
+                    max="20"
+                    step="0.1"
+                    value="2"
+                  />
+                </label>
+              </div>
+              <div class="config-actions">
+                <button type="button" id="btn-config-defaults">Przywróć domyślne</button>
+              </div>
+              <p class="hint">Zmiany są używane przy następnym przycisku „Start”.</p>
+            </form>
+          </div>
+
+          <div class="controls-group">
             <h3>Status</h3>
             <p>
               Tik: <span id="stat-tick" aria-live="polite">0</span>
@@ -34,6 +241,29 @@
             <p>
               Populacja: <span id="stat-population" aria-live="polite">0</span>
             </p>
+            <p>
+              Jedzenie na planszy: <span id="stat-food" aria-live="polite">0</span>
+            </p>
+            <p>
+              Trucizna na planszy: <span id="stat-poison" aria-live="polite">0</span>
+            </p>
+          </div>
+
+          <div class="controls-group">
+            <h3>Tryb AUTO</h3>
+            <label for="input-speed" class="range-label">
+              Prędkość (tury/s):
+              <span id="speed-value" aria-live="polite">2.0</span>
+            </label>
+            <input
+              type="range"
+              id="input-speed"
+              min="0.5"
+              max="8"
+              step="0.5"
+              value="2"
+            />
+            <p class="hint">Regulacja działa również w trakcie autosymulacji.</p>
           </div>
         </section>
 
@@ -49,6 +279,16 @@
       </main>
     </div>
 
+    <script>
+      (function showFileProtocolWarning() {
+        if (window.location.protocol === 'file:') {
+          const warning = document.getElementById('file-protocol-warning');
+          if (warning) {
+            warning.hidden = false;
+          }
+        }
+      })();
+    </script>
     <script type="module" src="js/main.js"></script>
   </body>
 </html>
