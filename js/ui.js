@@ -1,8 +1,5 @@
 // js/ui.js
-// Etap 3: UI aktualizuje statystyki środowiska po każdym kroku.
 // Etap 6: UI z panelem konfiguracji, rozmnażaniem, walką oraz autosymulacją.
-// Etap 2: UI zarządza światem, turą i statystykami.
-// Etap 1: UI zarządza światem i statyczną populacją.
 import { defaultConfig } from './config.js';
 import { Simulation } from './simulation.js';
 import { WorldRenderer } from './renderer.js';
@@ -49,107 +46,6 @@ function getDomElements() {
     statTick: document.getElementById('stat-tick'),
     statPopulation: document.getElementById('stat-population'),
     statFood: document.getElementById('stat-food'),
-    statPoison: document.getElementById('stat-poison')
-  };
-}
-
-function updateStatsPanel({ statTick, statPopulation, statFood, statPoison }) {
-  if (!simulation) return;
-
-  const { tick, population, food, poison } = simulation.getStats();
-
-  if (statTick) statTick.textContent = String(tick);
-  if (statPopulation) statPopulation.textContent = String(population);
-  if (statFood) statFood.textContent = String(food);
-  if (statPoison) statPoison.textContent = String(poison);
-}
-
-function renderWorldIfAvailable() {
-  const world = simulation?.getWorld();
-  if (world) {
-    renderer.renderWorld(world);
-  } else {
-    const config = simulation?.getConfig() ?? defaultConfig;
-    renderer.renderPlaceholder(config.worldWidth, config.worldHeight);
-  }
-}
-
-function setControlsState(dom, state) {
-  const { btnStart, btnStep, btnStartAuto, btnPause, btnReset } = dom;
-
-  if (state === 'initial') {
-    btnStart?.removeAttribute('disabled');
-    btnStep?.setAttribute('disabled', 'disabled');
-    btnStartAuto?.setAttribute('disabled', 'disabled');
-    btnPause?.setAttribute('disabled', 'disabled');
-    btnReset?.setAttribute('disabled', 'disabled');
-    return;
-  }
-
-  if (state === 'running') {
-    btnStart?.setAttribute('disabled', 'disabled');
-    btnStep?.removeAttribute('disabled');
-    btnStartAuto?.setAttribute('disabled', 'disabled');
-    btnPause?.setAttribute('disabled', 'disabled');
-    btnReset?.removeAttribute('disabled');
-  }
-
-  if (state === 'stopped') {
-    btnStart?.removeAttribute('disabled');
-    btnStep?.setAttribute('disabled', 'disabled');
-    btnStartAuto?.setAttribute('disabled', 'disabled');
-    btnPause?.setAttribute('disabled', 'disabled');
-    btnReset?.setAttribute('disabled', 'disabled');
-  };
-}
-
-function updateStatsPanel({ statTick, statPopulation, statFood, statPoison }) {
-  if (!simulation) return;
-
-  const { tick, population, food, poison } = simulation.getStats();
-
-  if (statTick) statTick.textContent = String(tick);
-  if (statPopulation) statPopulation.textContent = String(population);
-  if (statFood) statFood.textContent = String(food);
-  if (statPoison) statPoison.textContent = String(poison);
-}
-
-function renderWorldIfAvailable() {
-  const world = simulation?.getWorld();
-  if (world) {
-    renderer.renderWorld(world);
-  } else {
-    const config = simulation?.getConfig() ?? defaultConfig;
-    renderer.renderPlaceholder(config.worldWidth, config.worldHeight);
-  }
-}
-
-function setControlsState(dom, state) {
-  const { btnStart, btnStep, btnStartAuto, btnPause, btnReset } = dom;
-
-  if (state === 'initial') {
-    btnStart?.removeAttribute('disabled');
-    btnStep?.setAttribute('disabled', 'disabled');
-    btnStartAuto?.setAttribute('disabled', 'disabled');
-    btnPause?.setAttribute('disabled', 'disabled');
-    btnReset?.setAttribute('disabled', 'disabled');
-    return;
-  }
-
-  if (state === 'running') {
-    btnStart?.setAttribute('disabled', 'disabled');
-    btnStep?.removeAttribute('disabled');
-    btnStartAuto?.setAttribute('disabled', 'disabled');
-    btnPause?.setAttribute('disabled', 'disabled');
-    btnReset?.removeAttribute('disabled');
-  }
-
-  if (state === 'stopped') {
-    btnStart?.removeAttribute('disabled');
-    btnStep?.setAttribute('disabled', 'disabled');
-    btnStartAuto?.setAttribute('disabled', 'disabled');
-    btnPause?.setAttribute('disabled', 'disabled');
-    btnReset?.setAttribute('disabled', 'disabled');
     statPoison: document.getElementById('stat-poison'),
     inputSpeed: document.getElementById('input-speed'),
     speedValue: document.getElementById('speed-value'),
@@ -202,8 +98,9 @@ function populateConfigForm(dom, sourceConfig) {
   });
 }
 
-function readConfigOverrides(dom) {
+function readConfigOverrides(dom, options = {}) {
   const { configForm } = dom;
+  const { commitValues = true } = options;
   const currentConfig = getCurrentConfigSnapshot();
   const overrides = {};
 
@@ -220,46 +117,58 @@ function readConfigOverrides(dom) {
     const finalValue = sanitized ?? fallback;
 
     overrides[field.key] = finalValue;
-    if (Number.isFinite(finalValue)) {
+
+    if (!commitValues) {
+      return;
+    }
+
+    if (sanitized !== null && Number.isFinite(sanitized)) {
+      input.value = String(sanitized);
+    } else if (Number.isFinite(finalValue)) {
       input.value = String(finalValue);
     }
   });
 
-  if (
-    overrides.initialEnergyMin !== undefined &&
-    overrides.initialEnergyMax !== undefined &&
-    overrides.initialEnergyMin > overrides.initialEnergyMax
-  ) {
-    const temp = overrides.initialEnergyMin;
-    overrides.initialEnergyMin = overrides.initialEnergyMax;
-    overrides.initialEnergyMax = temp;
-    const minInput = configForm.querySelector('#input-initial-energy-min');
-    const maxInput = configForm.querySelector('#input-initial-energy-max');
-    if (minInput) minInput.value = String(overrides.initialEnergyMin);
-    if (maxInput) maxInput.value = String(overrides.initialEnergyMax);
-  }
+  if (commitValues) {
+    if (
+      overrides.initialEnergyMin !== undefined &&
+      overrides.initialEnergyMax !== undefined &&
+      overrides.initialEnergyMin > overrides.initialEnergyMax
+    ) {
+      const temp = overrides.initialEnergyMin;
+      overrides.initialEnergyMin = overrides.initialEnergyMax;
+      overrides.initialEnergyMax = temp;
+      const minInput = configForm.querySelector('#input-initial-energy-min');
+      const maxInput = configForm.querySelector('#input-initial-energy-max');
+      if (minInput) minInput.value = String(overrides.initialEnergyMin);
+      if (maxInput) maxInput.value = String(overrides.initialEnergyMax);
+    }
 
-  if (overrides.worldWidth !== undefined && overrides.worldHeight !== undefined) {
-    const maxPopulation = overrides.worldWidth * overrides.worldHeight;
-    if (overrides.initialPopulation !== undefined) {
-      overrides.initialPopulation = Math.max(0, Math.min(overrides.initialPopulation, maxPopulation));
-      const popInput = configForm.querySelector('#input-initial-population');
-      if (popInput) {
-        popInput.value = String(overrides.initialPopulation);
+    if (overrides.worldWidth !== undefined && overrides.worldHeight !== undefined) {
+      const maxPopulation = overrides.worldWidth * overrides.worldHeight;
+      if (overrides.initialPopulation !== undefined) {
+        overrides.initialPopulation = Math.max(
+          0,
+          Math.min(overrides.initialPopulation, maxPopulation)
+        );
+        const popInput = configForm.querySelector('#input-initial-population');
+        if (popInput) {
+          popInput.value = String(overrides.initialPopulation);
+        }
       }
-    }
-    if (overrides.maxFoodOnMap !== undefined) {
-      overrides.maxFoodOnMap = Math.min(overrides.maxFoodOnMap, maxPopulation);
-      const foodInput = configForm.querySelector('#input-max-food');
-      if (foodInput) {
-        foodInput.value = String(overrides.maxFoodOnMap);
+      if (overrides.maxFoodOnMap !== undefined) {
+        overrides.maxFoodOnMap = Math.min(overrides.maxFoodOnMap, maxPopulation);
+        const foodInput = configForm.querySelector('#input-max-food');
+        if (foodInput) {
+          foodInput.value = String(overrides.maxFoodOnMap);
+        }
       }
-    }
-    if (overrides.maxPoisonOnMap !== undefined) {
-      overrides.maxPoisonOnMap = Math.min(overrides.maxPoisonOnMap, maxPopulation);
-      const poisonInput = configForm.querySelector('#input-max-poison');
-      if (poisonInput) {
-        poisonInput.value = String(overrides.maxPoisonOnMap);
+      if (overrides.maxPoisonOnMap !== undefined) {
+        overrides.maxPoisonOnMap = Math.min(overrides.maxPoisonOnMap, maxPopulation);
+        const poisonInput = configForm.querySelector('#input-max-poison');
+        if (poisonInput) {
+          poisonInput.value = String(overrides.maxPoisonOnMap);
+        }
       }
     }
   }
@@ -280,7 +189,7 @@ function updateStatsPanel(dom) {
 }
 
 function renderPlaceholderFromForm(dom) {
-  const overrides = readConfigOverrides(dom);
+  const overrides = readConfigOverrides(dom, { commitValues: false });
   const width = overrides.worldWidth ?? defaultConfig.worldWidth;
   const height = overrides.worldHeight ?? defaultConfig.worldHeight;
   renderer.renderPlaceholder(width, height);
@@ -346,7 +255,7 @@ function setupConfigForm(dom) {
       return;
     }
     const field = CONFIG_FIELD_DEFINITIONS.find((item) => item.id === event.target.id);
-    readConfigOverrides(dom);
+    readConfigOverrides(dom, { commitValues: false });
     if (!simulation.getWorld() && field?.affectsCanvas) {
       renderPlaceholderFromForm(dom);
     }
@@ -394,51 +303,8 @@ function setControlsState(dom, state) {
   }
 }
 
-function renderWorldIfAvailable() {
-  const world = simulation?.getWorld();
-  if (world) {
-    renderer.renderWorld(world);
-  } else {
-    const config = simulation?.getConfig() ?? defaultConfig;
-    renderer.renderPlaceholder(config.worldWidth, config.worldHeight);
-  }
-}
-
-function setControlsState(dom, state) {
-  const { btnStart, btnStep, btnStartAuto, btnPause, btnReset } = dom;
-
-  if (state === 'initial') {
-    btnStart?.removeAttribute('disabled');
-    btnStep?.setAttribute('disabled', 'disabled');
-    btnStartAuto?.setAttribute('disabled', 'disabled');
-    btnPause?.setAttribute('disabled', 'disabled');
-    btnReset?.setAttribute('disabled', 'disabled');
-    return;
-  }
-
-  if (state === 'running') {
-    btnStart?.setAttribute('disabled', 'disabled');
-    btnStep?.removeAttribute('disabled');
-    btnStartAuto?.setAttribute('disabled', 'disabled');
-    btnPause?.setAttribute('disabled', 'disabled');
-    btnReset?.removeAttribute('disabled');
-  }
-
-  if (state === 'stopped') {
-    btnStart?.removeAttribute('disabled');
-    btnStep?.setAttribute('disabled', 'disabled');
-    btnStartAuto?.setAttribute('disabled', 'disabled');
-    btnPause?.setAttribute('disabled', 'disabled');
-    btnReset?.setAttribute('disabled', 'disabled');
-  }
-}
-
 function attachButtonActions(dom) {
   dom.btnStart?.addEventListener('click', () => {
-    console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 3).');
-    const world = simulation.startNew();
-    renderWorldIfAvailable();
-    updateStatsPanel(dom);
     console.log('[ui] Start → tworzę nowy świat zgodnie z bieżącą konfiguracją (Etap 6).');
     const overrides = readConfigOverrides(dom);
     const world = simulation.startNew(overrides);
@@ -447,14 +313,6 @@ function attachButtonActions(dom) {
     updateSpeedDisplay(dom);
     if (world) {
       setControlsState(dom, CONTROL_STATE.MANUAL);
-    console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 2).');
-    const world = simulation.startNew();
-    console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 1).');
-    simulation.startNew();
-    renderWorldIfAvailable();
-    updateStatsPanel(dom.statTick, dom.statPopulation);
-    if (world) {
-      setControlsState(dom, 'running');
     }
   });
 
@@ -469,23 +327,6 @@ function attachButtonActions(dom) {
     if (world.getAliveCount() === 0) {
       console.info('[ui] Wszystkie istoty zmarły – rozpocznij nowy świat lub zresetuj.');
       setControlsState(dom, CONTROL_STATE.FINISHED);
-    console.log(
-      '[ui] Step → wykonuję turę: metabolizm, ruch, środowisko i śmierć (Etap 3).'
-      '[ui] Step → wykonuję turę: metabolizm, ruch i sprawdzenie śmierci (Etap 2).'
-    );
-    const world = simulation.stepOnce();
-    if (!world) return;
-
-    renderWorldIfAvailable();
-    updateStatsPanel(dom);
-    console.log('[ui] Step → logika tury pojawi się w Etapie 2.');
-    simulation.stepOnce();
-    renderWorldIfAvailable();
-    updateStatsPanel(dom.statTick, dom.statPopulation);
-
-    if (world.getAliveCount() === 0) {
-      console.info('[ui] Wszystkie istoty zmarły – wróć do stanu początkowego.');
-      setControlsState(dom, 'stopped');
     }
   });
 
@@ -542,10 +383,6 @@ function attachButtonActions(dom) {
     updateStatsPanel(dom);
     updateSpeedDisplay(dom);
     setControlsState(dom, CONTROL_STATE.INITIAL);
-    renderWorldIfAvailable();
-    updateStatsPanel(dom);
-    updateStatsPanel(dom.statTick, dom.statPopulation);
-    setControlsState(dom, 'initial');
   });
 }
 
@@ -566,13 +403,8 @@ export function initUI() {
   renderWorldIfAvailable(dom);
   updateStatsPanel(dom);
   updateSpeedDisplay(dom);
-  setControlsState(dom, 'initial');
-  renderWorldIfAvailable();
-  updateStatsPanel(dom);
-  updateStatsPanel(dom.statTick, dom.statPopulation);
 
   attachButtonActions(dom);
 
-  console.log('[ui] Interfejs gotowy – środowisko aktywne od Etapu 3.');
   console.log('[ui] Interfejs gotowy – konfiguracja parametrów, rozmnażanie i autotryb włączone.');
 }

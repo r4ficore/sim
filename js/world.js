@@ -1,5 +1,4 @@
 // js/world.js
-// Etap 3: świat z logiką środowiska (jedzenie + trucizna) oraz interakcjami.
 // Etapy 4–5: świat z logiką środowiska, rozmnażaniem i walką.
 import { Creature } from './creature.js';
 
@@ -7,9 +6,6 @@ const CELL_OBJECT = {
   FOOD: 'FOOD',
   POISON: 'POISON'
 };
-// Etap 2: model świata z logiką jednej tury (metabolizm + ruch + śmierć).
-// Etap 1: model świata z inicjalną populacją (jeszcze bez logiki tury).
-import { Creature } from './creature.js';
 
 export class World {
   constructor(config) {
@@ -350,7 +346,6 @@ export class World {
     if (offspringBuffer.length > 0) {
       this.creatures.push(...offspringBuffer);
     }
-    });
   }
 }
 
