@@ -1,5 +1,5 @@
 // js/ui.js
-// Etap 0: tylko logika UI – bez faktycznej symulacji.
+// Etap 3: UI aktualizuje statystyki środowiska po każdym kroku.
 import { defaultConfig } from './config.js';
 import { Simulation } from './simulation.js';
 import { WorldRenderer } from './renderer.js';
@@ -16,30 +16,87 @@ function getDomElements() {
     btnPause: document.getElementById('btn-pause'),
     btnReset: document.getElementById('btn-reset'),
     statTick: document.getElementById('stat-tick'),
-    statPopulation: document.getElementById('stat-population')
+    statPopulation: document.getElementById('stat-population'),
+    statFood: document.getElementById('stat-food'),
+    statPoison: document.getElementById('stat-poison')
   };
 }
 
-function updateStatsPanel(statTickEl, statPopulationEl) {
-  if (!statTickEl || !statPopulationEl || !simulation) return;
+function updateStatsPanel({ statTick, statPopulation, statFood, statPoison }) {
+  if (!simulation) return;
 
-  const { tick, population } = simulation.getStats();
-  statTickEl.textContent = String(tick);
-  statPopulationEl.textContent = String(population);
+  const { tick, population, food, poison } = simulation.getStats();
+
+  if (statTick) statTick.textContent = String(tick);
+  if (statPopulation) statPopulation.textContent = String(population);
+  if (statFood) statFood.textContent = String(food);
+  if (statPoison) statPoison.textContent = String(poison);
+}
+
+function renderWorldIfAvailable() {
+  const world = simulation?.getWorld();
+  if (world) {
+    renderer.renderWorld(world);
+  } else {
+    const config = simulation?.getConfig() ?? defaultConfig;
+    renderer.renderPlaceholder(config.worldWidth, config.worldHeight);
+  }
+}
+
+function setControlsState(dom, state) {
+  const { btnStart, btnStep, btnStartAuto, btnPause, btnReset } = dom;
+
+  if (state === 'initial') {
+    btnStart?.removeAttribute('disabled');
+    btnStep?.setAttribute('disabled', 'disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.setAttribute('disabled', 'disabled');
+    return;
+  }
+
+  if (state === 'running') {
+    btnStart?.setAttribute('disabled', 'disabled');
+    btnStep?.removeAttribute('disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.removeAttribute('disabled');
+  }
+
+  if (state === 'stopped') {
+    btnStart?.removeAttribute('disabled');
+    btnStep?.setAttribute('disabled', 'disabled');
+    btnStartAuto?.setAttribute('disabled', 'disabled');
+    btnPause?.setAttribute('disabled', 'disabled');
+    btnReset?.setAttribute('disabled', 'disabled');
+  }
 }
 
 function attachButtonActions(dom) {
   dom.btnStart?.addEventListener('click', () => {
-    console.log('[ui] Start → przygotowuję pusty świat (Etap 1 doda populację).');
-    simulation.startNew();
-    renderer.renderPlaceholder(defaultConfig.worldWidth, defaultConfig.worldHeight);
-    updateStatsPanel(dom.statTick, dom.statPopulation);
+    console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 3).');
+    const world = simulation.startNew();
+    renderWorldIfAvailable();
+    updateStatsPanel(dom);
+    if (world) {
+      setControlsState(dom, 'running');
+    }
   });
 
   dom.btnStep?.addEventListener('click', () => {
-    console.log('[ui] Step → symulacja jeszcze nie zaimplementowana.');
-    simulation.stepOnce();
-    updateStatsPanel(dom.statTick, dom.statPopulation);
+    console.log(
+      '[ui] Step → wykonuję turę: metabolizm, ruch, środowisko i śmierć (Etap 3).'
+    );
+    const world = simulation.stepOnce();
+    if (!world) return;
+
+    renderWorldIfAvailable();
+    updateStatsPanel(dom);
+
+    if (world.getAliveCount() === 0) {
+      console.info('[ui] Wszystkie istoty zmarły – wróć do stanu początkowego.');
+      setControlsState(dom, 'stopped');
+    }
   });
 
   dom.btnStartAuto?.addEventListener('click', () => {
@@ -55,8 +112,9 @@ function attachButtonActions(dom) {
   dom.btnReset?.addEventListener('click', () => {
     console.log('[ui] Reset → czyszczenie sceny do stanu początkowego.');
     simulation.reset();
-    renderer.renderPlaceholder(defaultConfig.worldWidth, defaultConfig.worldHeight);
-    updateStatsPanel(dom.statTick, dom.statPopulation);
+    renderWorldIfAvailable();
+    updateStatsPanel(dom);
+    setControlsState(dom, 'initial');
   });
 }
 
@@ -71,10 +129,11 @@ export function initUI() {
   simulation = new Simulation(defaultConfig);
   renderer = new WorldRenderer(dom.canvas, defaultConfig.cellSize);
 
-  renderer.renderPlaceholder(defaultConfig.worldWidth, defaultConfig.worldHeight);
-  updateStatsPanel(dom.statTick, dom.statPopulation);
+  setControlsState(dom, 'initial');
+  renderWorldIfAvailable();
+  updateStatsPanel(dom);
 
   attachButtonActions(dom);
 
-  console.log('[ui] Interfejs gotowy – czekamy na kolejne etapy.');
+  console.log('[ui] Interfejs gotowy – środowisko aktywne od Etapu 3.');
 }
