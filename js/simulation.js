@@ -1,5 +1,7 @@
 // js/simulation.js
 // Etapy 4–6: zarządzanie światem, rozmnażaniem, trybem autosymulacji i konfiguracją.
+// Etap 2: zarządzanie światem oraz logiką pojedynczej tury.
+// Etap 1: zarządzanie światem i statystykami (bez logiki tury).
 import { defaultConfig } from './config.js';
 import { World } from './world.js';
 
@@ -69,6 +71,7 @@ export class Simulation {
 
   startNew(overrides = {}) {
     this.stopAuto({ triggerCallback: false });
+    this.stopAuto();
     this.config = { ...this.baseConfig, ...overrides };
     this.world = new World(this.config);
     this.world.initPopulation();
@@ -79,6 +82,10 @@ export class Simulation {
 
     console.info('[simulation] startNew() – świat gotowy (Etap 6).');
     return this.world;
+
+    console.info('[simulation] startNew() – świat gotowy (Etap 2).');
+    return this.world;
+    console.info('[simulation] startNew() – świat gotowy (Etap 1).');
   }
 
   stepOnce() {
@@ -142,6 +149,10 @@ export class Simulation {
     }
 
     return wasRunning;
+      clearInterval(this.autoInterval);
+      this.autoInterval = null;
+      console.info('[simulation] stopAuto() – timer zatrzymany (Etap 5 doda autotryb).');
+    }
   }
 
   setSpeed(ticksPerSecond = 1) {
@@ -180,6 +191,8 @@ export class Simulation {
 
     const speedSource = this.config.autoTicksPerSecond ?? this.autoSpeed ?? 1;
     this.autoSpeed = this._clampSpeed(speedSource);
+    this.config = { ...this.baseConfig };
+    console.info('[simulation] reset() – powrót do stanu początkowego.');
   }
 
   getStats() {
@@ -190,6 +203,9 @@ export class Simulation {
         population: this.world.getAliveCount(),
         food: environment.food,
         poison: environment.poison
+      return {
+        tick: this.world.tick,
+        population: this.world.getAliveCount()
       };
     }
 
