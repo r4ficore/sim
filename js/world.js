@@ -1,5 +1,6 @@
 // js/world.js
 // Etap 2: model świata z logiką jednej tury (metabolizm + ruch + śmierć).
+// Etap 1: model świata z inicjalną populacją (jeszcze bez logiki tury).
 import { Creature } from './creature.js';
 
 export class World {

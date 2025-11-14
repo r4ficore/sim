@@ -1,5 +1,6 @@
 // js/ui.js
 // Etap 2: UI zarządza światem, turą i statystykami.
+// Etap 1: UI zarządza światem i statyczną populacją.
 import { defaultConfig } from './config.js';
 import { Simulation } from './simulation.js';
 import { WorldRenderer } from './renderer.js';
@@ -71,6 +72,8 @@ function attachButtonActions(dom) {
   dom.btnStart?.addEventListener('click', () => {
     console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 2).');
     const world = simulation.startNew();
+    console.log('[ui] Start → tworzę nowy świat i losową populację (Etap 1).');
+    simulation.startNew();
     renderWorldIfAvailable();
     updateStatsPanel(dom.statTick, dom.statPopulation);
     if (world) {
@@ -85,6 +88,8 @@ function attachButtonActions(dom) {
     const world = simulation.stepOnce();
     if (!world) return;
 
+    console.log('[ui] Step → logika tury pojawi się w Etapie 2.');
+    simulation.stepOnce();
     renderWorldIfAvailable();
     updateStatsPanel(dom.statTick, dom.statPopulation);
 

@@ -1,5 +1,6 @@
 // js/simulation.js
 // Etap 2: zarządzanie światem oraz logiką pojedynczej tury.
+// Etap 1: zarządzanie światem i statystykami (bez logiki tury).
 import { defaultConfig } from './config.js';
 import { World } from './world.js';
 
@@ -25,6 +26,7 @@ export class Simulation {
 
     console.info('[simulation] startNew() – świat gotowy (Etap 2).');
     return this.world;
+    console.info('[simulation] startNew() – świat gotowy (Etap 1).');
   }
 
   stepOnce() {
