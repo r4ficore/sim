@@ -10,7 +10,7 @@
     <div id="app">
       <header id="app-header">
         <h1>Symulacja ewolucji – prototyp</h1>
-        <p class="subtitle">Etap 6 – panel parametrów i tryb auto</p>
+        <p class="subtitle">DNA, zachowania kierunkowe i podgląd organizmów</p>
       </header>
 
       <main id="app-main">
@@ -249,6 +249,27 @@
             </p>
           </div>
 
+          <div class="controls-group" id="selected-creature">
+            <h3>Wybrany organizm</h3>
+            <p>ID: <span id="selected-id">—</span></p>
+            <p>Płeć: <span id="selected-sex">—</span></p>
+            <p>Pokolenie: <span id="selected-generation">—</span></p>
+            <p>Wiek: <span id="selected-age">—</span></p>
+            <p>Energia: <span id="selected-energy">—</span></p>
+            <div class="genes-panel">
+              <h4>Geny</h4>
+              <ul>
+                <li>Wzrok: <span id="gene-vision">—</span></li>
+                <li>Atrakcyjność jedzenia: <span id="gene-food">—</span></li>
+                <li>Awersja do trucizny: <span id="gene-poison">—</span></li>
+                <li>Atrakcyjność partnera: <span id="gene-mate">—</span></li>
+                <li>Awersja do tłoku: <span id="gene-crowd">—</span></li>
+                <li>Próg niskiej energii: <span id="gene-low-energy">—</span></li>
+                <li>Próg rozmnażania: <span id="gene-reproduce">—</span></li>
+              </ul>
+            </div>
+          </div>
+
           <div class="controls-group">
             <h3>Tryb AUTO</h3>
             <label for="input-speed" class="range-label">
@@ -263,7 +284,7 @@
               step="0.5"
               value="2"
             />
-            <p class="hint">Regulacja działa również w trakcie autosymulacji.</p>
+            <p class="hint">Kliknij w planszę, aby podejrzeć organizm (aktualizuje się w AUTO).</p>
           </div>
         </section>
 
@@ -273,7 +294,7 @@
             Twoja przeglądarka nie wspiera elementu canvas.
           </canvas>
           <p class="canvas-caption">
-            Tu w kolejnych etapach będziemy rysować populację i obiekty środowiska.
+            Kliknij komórkę, aby podejrzeć jej mieszkańców. W trybie AUTO panel aktualizuje się w czasie rzeczywistym.
           </p>
         </section>
       </main>

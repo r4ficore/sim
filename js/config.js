@@ -8,6 +8,7 @@ export const defaultConfig = {
   initialEnergyMin: 30,
   initialEnergyMax: 60,
   metabolismCost: 1,
+  movementEnergyCost: 0.4, // tuning parameter – koszt ruchu kierunkowego.
   foodSpawnAttempts: 2,
   poisonSpawnAttempts: 1,
   maxFoodOnMap: 50,

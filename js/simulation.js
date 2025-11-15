@@ -1,5 +1,5 @@
 // js/simulation.js
-// Etapy 4–6: zarządzanie światem, rozmnażaniem, trybem autosymulacji i konfiguracją.
+// Zarządzanie światem, autosymulacją, konfiguracją oraz wyborem organizmów.
 import { defaultConfig } from './config.js';
 import { World } from './world.js';
 
@@ -17,6 +17,7 @@ export class Simulation {
     this._autoLoop = null;
 
     this.autoSpeed = this._clampSpeed(this.config.autoTicksPerSecond ?? 1);
+    this.selectedCreature = null;
   }
 
   _clampSpeed(value) {
@@ -44,7 +45,7 @@ export class Simulation {
     return () => {
       const world = this.stepOnce();
       if (typeof this.autoTickHandler === 'function') {
-        this.autoTickHandler(world);
+        this.autoTickHandler(world, this.getSelectedCreature());
       }
 
       if (!world || world.getAliveCount() === 0) {
@@ -67,6 +68,22 @@ export class Simulation {
     return true;
   }
 
+  _refreshSelectionAfterTick() {
+    if (!this.selectedCreature) {
+      return;
+    }
+
+    if (!this.selectedCreature.alive) {
+      this.selectedCreature = null;
+      return;
+    }
+
+    // Zabezpieczenie na wypadek resetu świata bez resetu wyboru.
+    if (this.world && !this.world.creatures.includes(this.selectedCreature)) {
+      this.selectedCreature = null;
+    }
+  }
+
   startNew(overrides = {}) {
     this.stopAuto({ triggerCallback: false });
     this.config = { ...this.baseConfig, ...overrides };
@@ -76,8 +93,9 @@ export class Simulation {
     this.tick = this.world.tick;
     this.population = this.world.getAliveCount();
     this.autoSpeed = this._clampSpeed(this.config.autoTicksPerSecond ?? this.autoSpeed);
+    this.selectedCreature = null;
 
-    console.info('[simulation] startNew() – świat gotowy (Etap 6).');
+    console.info('[simulation] startNew() – świat gotowy (DNA i zachowania aktywne).');
     return this.world;
   }
 
@@ -90,6 +108,7 @@ export class Simulation {
     this.world.step();
     this.tick = this.world.tick;
     this.population = this.world.getAliveCount();
+    this._refreshSelectionAfterTick();
     return this.world;
   }
 
@@ -138,7 +157,7 @@ export class Simulation {
     }
 
     if (triggerCallback && wasRunning && typeof stopHandler === 'function') {
-      stopHandler();
+      stopHandler(this.world, this.getSelectedCreature());
     }
 
     return wasRunning;
@@ -173,6 +192,7 @@ export class Simulation {
     this.world = null;
     this.tick = 0;
     this.population = 0;
+    this.selectedCreature = null;
 
     if (revertConfig) {
       this.config = { ...this.baseConfig };
@@ -211,5 +231,34 @@ export class Simulation {
 
   getAutoSpeed() {
     return this.autoSpeed;
+  }
+
+  selectCreatureAt(x, y) {
+    if (!this.world) {
+      this.selectedCreature = null;
+      return null;
+    }
+
+    const candidates = this.world.creatures.filter(
+      (creature) => creature.alive && creature.x === x && creature.y === y
+    );
+
+    if (candidates.length === 0) {
+      this.selectedCreature = null;
+      return null;
+    }
+
+    candidates.sort((a, b) => b.energy - a.energy);
+    this.selectedCreature = candidates[0];
+    return this.selectedCreature;
+  }
+
+  getSelectedCreature() {
+    if (!this.selectedCreature) return null;
+    if (!this.selectedCreature.alive) {
+      this.selectedCreature = null;
+      return null;
+    }
+    return this.selectedCreature;
   }
 }

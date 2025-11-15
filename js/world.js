@@ -1,11 +1,19 @@
 // js/world.js
-// Etapy 4–5: świat z logiką środowiska, rozmnażaniem i walką.
-import { Creature } from './creature.js';
+// Świat z logiką środowiska, zachowaniami kierunkowymi oraz dziedziczeniem genów.
+import { Creature, createRandomGenes, mixGenes } from './creature.js';
 
 const CELL_OBJECT = {
   FOOD: 'FOOD',
   POISON: 'POISON'
 };
+
+const MOVE_OPTIONS = [
+  { dx: 0, dy: 0 },
+  { dx: 1, dy: 0 },
+  { dx: -1, dy: 0 },
+  { dx: 0, dy: 1 },
+  { dx: 0, dy: -1 }
+];
 
 export class World {
   constructor(config) {
@@ -39,24 +47,29 @@ export class World {
     };
   }
 
+  _getCellKey(x, y) {
+    return `${x},${y}`;
+  }
+
   _isCellOccupiedByCreature(x, y) {
     return this.creatures.some((creature) => creature.alive && creature.x === x && creature.y === y);
   }
 
-  _createCreature() {
-    const sex = Math.random() < 0.5 ? 'M' : 'F';
-    const energy = this._randomInt(
-      this.config.initialEnergyMin,
-      this.config.initialEnergyMax
-    );
-    const { x, y } = this._randomPosition();
+  _createCreature(overrides = {}) {
+    const sex = overrides.sex ?? (Math.random() < 0.5 ? 'M' : 'F');
+    const energy =
+      overrides.energy ??
+      this._randomInt(this.config.initialEnergyMin, this.config.initialEnergyMax);
+    const { x, y } = overrides.x !== undefined && overrides.y !== undefined ? overrides : this._randomPosition();
 
     return new Creature({
       id: this._nextCreatureId++,
       sex,
       x,
       y,
-      energy
+      energy,
+      generation: overrides.generation ?? 1,
+      genes: overrides.genes ?? createRandomGenes()
     });
   }
 
@@ -66,34 +79,11 @@ export class World {
     return value;
   }
 
-  _moveCreature(creature) {
-    const direction = Math.floor(Math.random() * 4);
-    let { x, y } = creature;
-
-    switch (direction) {
-      case 0:
-        x += 1;
-        break;
-      case 1:
-        x -= 1;
-        break;
-      case 2:
-        y += 1;
-        break;
-      case 3:
-      default:
-        y -= 1;
-        break;
-    }
-
-    creature.x = this._wrapCoordinate(x, this.width);
-    creature.y = this._wrapCoordinate(y, this.height);
-  }
-
   _collectCreaturesByCell(creatures) {
     const map = new Map();
     creatures.forEach((creature) => {
-      const key = `${creature.x},${creature.y}`;
+      if (!creature.alive) return;
+      const key = this._getCellKey(creature.x, creature.y);
       if (!map.has(key)) {
         map.set(key, []);
       }
@@ -105,7 +95,9 @@ export class World {
   _canReproduce(creature) {
     if (!creature.alive) return false;
     if (creature.reproductionCooldown > 0) return false;
-    const threshold = this.config.reproductionEnergyThreshold ?? Infinity;
+    const geneThreshold = creature.genes?.reproduceEnergyThreshold;
+    const configThreshold = this.config.reproductionEnergyThreshold ?? 0;
+    const threshold = Math.max(configThreshold, geneThreshold ?? configThreshold);
     return creature.energy >= threshold;
   }
 
@@ -144,12 +136,14 @@ export class World {
     );
     const childSex = Math.random() < 0.5 ? 'M' : 'F';
 
-    const child = new Creature({
-      id: this._nextCreatureId++,
+    const childGenes = mixGenes(male.genes, female.genes);
+    const child = this._createCreature({
       sex: childSex,
       x: male.x,
       y: male.y,
-      energy: offspringEnergy
+      energy: offspringEnergy,
+      generation: Math.max(male.generation ?? 1, female.generation ?? 1) + 1,
+      genes: childGenes
     });
     child.reproductionCooldown = cooldown;
     offspringBuffer.push(child);
@@ -260,6 +254,116 @@ export class World {
     }
   }
 
+  _evaluateVisionBonuses(creature, targetX, targetY, creaturesByCell, genes) {
+    const vision = Math.max(1, Math.round(genes.visionRange ?? 1));
+    if (vision <= 1) {
+      return 0;
+    }
+
+    let bonus = 0;
+    for (let dy = -vision; dy <= vision; dy++) {
+      for (let dx = -vision; dx <= vision; dx++) {
+        const distance = Math.abs(dx) + Math.abs(dy);
+        if (distance === 0 || distance > vision) continue;
+
+        const x = this._wrapCoordinate(targetX + dx, this.width);
+        const y = this._wrapCoordinate(targetY + dy, this.height);
+        const factor = (vision - distance + 1) * 0.05; // tuning parameter – miękki wpływ zasięgu.
+
+        const cellObject = this.cellsObjects[y][x];
+        if (cellObject === CELL_OBJECT.FOOD) {
+          bonus += genes.foodAttraction * factor;
+        } else if (cellObject === CELL_OBJECT.POISON) {
+          bonus -= genes.poisonAversion * factor;
+        }
+
+        const key = this._getCellKey(x, y);
+        const occupants = (creaturesByCell.get(key) || []).filter((other) => other !== creature && other.alive);
+        if (occupants.length > 0) {
+          const mates = occupants.filter((other) => other.sex !== creature.sex).length;
+          if (mates > 0) {
+            bonus += genes.mateAttraction * factor * mates;
+          }
+          bonus -= genes.crowdingAversion * factor * occupants.length * 0.5;
+        }
+      }
+    }
+
+    return bonus;
+  }
+
+  evaluateMoveForCreature(creature, targetX, targetY, creaturesByCell) {
+    const genes = creature.genes ?? createRandomGenes();
+    const key = this._getCellKey(targetX, targetY);
+    const occupants = (creaturesByCell.get(key) || []).filter((other) => other !== creature && other.alive);
+
+    const mates = occupants.filter((other) => other.sex !== creature.sex).length;
+    const totalOthers = occupants.length;
+
+    const cellContent = this.cellsObjects[targetY][targetX];
+    let score = 0;
+
+    if (cellContent === CELL_OBJECT.FOOD) {
+      score += genes.foodAttraction;
+    }
+
+    if (cellContent === CELL_OBJECT.POISON) {
+      score -= genes.poisonAversion;
+    }
+
+    score += genes.mateAttraction * mates;
+    score -= genes.crowdingAversion * totalOthers;
+
+    const energy = creature.energy;
+    if (energy < (genes.lowEnergyThreshold ?? 0)) {
+      score += genes.foodAttraction;
+      score -= genes.mateAttraction * 0.5;
+    } else if (energy > (genes.reproduceEnergyThreshold ?? 0)) {
+      score += genes.mateAttraction;
+    }
+
+    score += this._evaluateVisionBonuses(creature, targetX, targetY, creaturesByCell, genes);
+
+    if (targetX !== creature.x || targetY !== creature.y) {
+      const moveCost = this.config.movementEnergyCost ?? 0;
+      score -= moveCost * 0.5;
+    }
+
+    score += (Math.random() - 0.5) * 0.2;
+
+    return score;
+  }
+
+  decideMoveForCreature(creature, creaturesByCell) {
+    let bestOption = null;
+    let bestScore = -Infinity;
+
+    MOVE_OPTIONS.forEach((option) => {
+      const targetX = this._wrapCoordinate(creature.x + option.dx, this.width);
+      const targetY = this._wrapCoordinate(creature.y + option.dy, this.height);
+      const score = this.evaluateMoveForCreature(creature, targetX, targetY, creaturesByCell);
+
+      if (score > bestScore + 1e-6) {
+        bestScore = score;
+        bestOption = { ...option, targetX, targetY, score };
+      } else if (Math.abs(score - bestScore) <= 1e-6 && Math.random() < 0.5) {
+        bestOption = { ...option, targetX, targetY, score };
+      }
+    });
+
+    if (!bestOption) {
+      return {
+        dx: 0,
+        dy: 0,
+        targetX: creature.x,
+        targetY: creature.y,
+        score: 0
+      };
+    }
+
+    return bestOption;
+  }
+
   initPopulation() {
     this.creatures = [];
     this.cellsObjects = this._createEmptyCells();
@@ -297,15 +401,19 @@ export class World {
     this.tick += 1;
 
     const metabolismCost =
-      typeof this.config.metabolismCost === 'number'
-        ? this.config.metabolismCost
-        : 1;
+      typeof this.config.metabolismCost === 'number' ? this.config.metabolismCost : 1;
 
     this._spawnEnvironmentalObjects();
 
+    const aliveBeforeMove = this.getAliveCreatures();
+    if (aliveBeforeMove.length === 0) {
+      return;
+    }
+
+    const creaturesByCellBeforeMove = this._collectCreaturesByCell(aliveBeforeMove);
     const survivors = [];
 
-    this.creatures.forEach((creature) => {
+    aliveBeforeMove.forEach((creature) => {
       if (!creature.alive) {
         return;
       }
@@ -323,7 +431,27 @@ export class World {
         return;
       }
 
-      this._moveCreature(creature);
+      const moveDecision = this.decideMoveForCreature(creature, creaturesByCellBeforeMove);
+      const moved = moveDecision.targetX !== creature.x || moveDecision.targetY !== creature.y;
+
+      creature.x = moveDecision.targetX;
+      creature.y = moveDecision.targetY;
+
+      if (moved) {
+        const moveCost = this.config.movementEnergyCost ?? 0;
+        if (moveCost > 0) {
+          creature.energy -= moveCost;
+          if (creature.energy <= 0) {
+            creature.energy = 0;
+            creature.alive = false;
+          }
+        }
+      }
+
+      if (!creature.alive) {
+        return;
+      }
+
       this._applyCellInteraction(creature);
 
       if (creature.alive) {

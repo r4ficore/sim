@@ -1,5 +1,5 @@
 // js/renderer.js
-// Etap 3: renderer rysuje siatkę, obiekty środowiskowe i populację.
+// Renderer rysuje siatkę, obiekty środowiskowe i populację wraz z zaznaczeniem wybranego organizmu.
 import { CELL_OBJECT } from './world.js';
 
 export class WorldRenderer {
@@ -7,6 +7,10 @@ export class WorldRenderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.cellSize = cellSize;
+  }
+
+  getCellSize() {
+    return this.cellSize;
   }
 
   clearCanvas(width, height) {
@@ -86,7 +90,7 @@ export class WorldRenderer {
     }
   }
 
-  drawCreatures(world) {
+  drawCreatures(world, selectedCreature = null) {
     const ctx = this.ctx;
     const size = this.cellSize;
     const radius = (size * 0.6) / 2;
@@ -110,6 +114,14 @@ export class WorldRenderer {
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+
+      if (selectedCreature && creature.id === selectedCreature.id) {
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#f9f9f9';
+        ctx.arc(centerX, centerY, radius + 3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     });
   }
 
@@ -118,7 +130,7 @@ export class WorldRenderer {
     this.drawGrid(width, height);
   }
 
-  renderWorld(world) {
+  renderWorld(world, selectedCreature = null) {
     if (!world) {
       console.warn('[renderer] renderWorld() – brak świata do narysowania.');
       return;
@@ -127,6 +139,6 @@ export class WorldRenderer {
     this.clearCanvas(world.width, world.height);
     this.drawGrid(world.width, world.height);
     this.drawEnvironment(world);
-    this.drawCreatures(world);
+    this.drawCreatures(world, selectedCreature);
   }
 }

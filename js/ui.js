@@ -1,5 +1,5 @@
 // js/ui.js
-// Etap 6: UI z panelem konfiguracji, rozmnażaniem, walką oraz autosymulacją.
+// UI z panelem konfiguracji, autosymulacją oraz inspekcją organizmów.
 import { defaultConfig } from './config.js';
 import { Simulation } from './simulation.js';
 import { WorldRenderer } from './renderer.js';
@@ -49,7 +49,19 @@ function getDomElements() {
     statPoison: document.getElementById('stat-poison'),
     inputSpeed: document.getElementById('input-speed'),
     speedValue: document.getElementById('speed-value'),
-    configForm: document.getElementById('config-form')
+    configForm: document.getElementById('config-form'),
+    selectedId: document.getElementById('selected-id'),
+    selectedSex: document.getElementById('selected-sex'),
+    selectedGeneration: document.getElementById('selected-generation'),
+    selectedAge: document.getElementById('selected-age'),
+    selectedEnergy: document.getElementById('selected-energy'),
+    geneVision: document.getElementById('gene-vision'),
+    geneFood: document.getElementById('gene-food'),
+    genePoison: document.getElementById('gene-poison'),
+    geneMate: document.getElementById('gene-mate'),
+    geneCrowd: document.getElementById('gene-crowd'),
+    geneLowEnergy: document.getElementById('gene-low-energy'),
+    geneReproduce: document.getElementById('gene-reproduce')
   };
 }
 
@@ -188,20 +200,69 @@ function updateStatsPanel(dom) {
   if (statPoison) statPoison.textContent = String(poison);
 }
 
+function updateSelectedCreaturePanel(dom, creature) {
+  const {
+    selectedId,
+    selectedSex,
+    selectedGeneration,
+    selectedAge,
+    selectedEnergy,
+    geneVision,
+    geneFood,
+    genePoison,
+    geneMate,
+    geneCrowd,
+    geneLowEnergy,
+    geneReproduce
+  } = dom;
+
+  if (!creature) {
+    if (selectedId) selectedId.textContent = '—';
+    if (selectedSex) selectedSex.textContent = '—';
+    if (selectedGeneration) selectedGeneration.textContent = '—';
+    if (selectedAge) selectedAge.textContent = '—';
+    if (selectedEnergy) selectedEnergy.textContent = '—';
+    if (geneVision) geneVision.textContent = '—';
+    if (geneFood) geneFood.textContent = '—';
+    if (genePoison) genePoison.textContent = '—';
+    if (geneMate) geneMate.textContent = '—';
+    if (geneCrowd) geneCrowd.textContent = '—';
+    if (geneLowEnergy) geneLowEnergy.textContent = '—';
+    if (geneReproduce) geneReproduce.textContent = '—';
+    return;
+  }
+
+  const genes = creature.genes ?? {};
+  if (selectedId) selectedId.textContent = String(creature.id);
+  if (selectedSex) selectedSex.textContent = creature.sex ?? '—';
+  if (selectedGeneration) selectedGeneration.textContent = String(creature.generation ?? 1);
+  if (selectedAge) selectedAge.textContent = String(creature.age ?? 0);
+  if (selectedEnergy) selectedEnergy.textContent = String(Math.round(creature.energy ?? 0));
+  if (geneVision) geneVision.textContent = String(genes.visionRange ?? '—');
+  if (geneFood) geneFood.textContent = String(genes.foodAttraction ?? '—');
+  if (genePoison) genePoison.textContent = String(genes.poisonAversion ?? '—');
+  if (geneMate) geneMate.textContent = String(genes.mateAttraction ?? '—');
+  if (geneCrowd) geneCrowd.textContent = String(genes.crowdingAversion ?? '—');
+  if (geneLowEnergy) geneLowEnergy.textContent = String(genes.lowEnergyThreshold ?? '—');
+  if (geneReproduce) geneReproduce.textContent = String(genes.reproduceEnergyThreshold ?? '—');
+}
+
 function renderPlaceholderFromForm(dom) {
   const overrides = readConfigOverrides(dom, { commitValues: false });
   const width = overrides.worldWidth ?? defaultConfig.worldWidth;
   const height = overrides.worldHeight ?? defaultConfig.worldHeight;
   renderer.renderPlaceholder(width, height);
+  updateSelectedCreaturePanel(dom, null);
 }
 
 function renderWorldIfAvailable(dom) {
   const world = simulation?.getWorld();
   if (world) {
-    renderer.renderWorld(world);
-  } else {
-    renderPlaceholderFromForm(dom);
+    renderer.renderWorld(world, simulation.getSelectedCreature());
+    return true;
   }
+  renderPlaceholderFromForm(dom);
+  return false;
 }
 
 function updateSpeedDisplay(dom) {
@@ -245,7 +306,6 @@ function setupConfigForm(dom) {
     if (!simulation.getWorld()) {
       renderPlaceholderFromForm(dom);
     } else {
-      // Zaktualizuj podgląd konfiguracji na przyszłość.
       readConfigOverrides(dom);
     }
   });
@@ -303,26 +363,55 @@ function setControlsState(dom, state) {
   }
 }
 
+function attachCanvasSelection(dom) {
+  const { canvas } = dom;
+  if (!canvas) return;
+
+  canvas.addEventListener('click', (event) => {
+    if (!simulation.getWorld()) {
+      updateSelectedCreaturePanel(dom, null);
+      return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const cellSize = renderer.getCellSize();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const canvasX = (event.clientX - rect.left) * scaleX;
+    const canvasY = (event.clientY - rect.top) * scaleY;
+
+    const gridX = Math.floor(canvasX / cellSize);
+    const gridY = Math.floor(canvasY / cellSize);
+
+    const selected = simulation.selectCreatureAt(gridX, gridY);
+    renderWorldIfAvailable(dom);
+    updateSelectedCreaturePanel(dom, selected);
+  });
+}
+
 function attachButtonActions(dom) {
   dom.btnStart?.addEventListener('click', () => {
-    console.log('[ui] Start → tworzę nowy świat zgodnie z bieżącą konfiguracją (Etap 6).');
+    console.log('[ui] Start → tworzę nowy świat zgodnie z bieżącą konfiguracją (DNA aktywne).');
     const overrides = readConfigOverrides(dom);
     const world = simulation.startNew(overrides);
     renderWorldIfAvailable(dom);
     updateStatsPanel(dom);
     updateSpeedDisplay(dom);
+    updateSelectedCreaturePanel(dom, null);
     if (world) {
       setControlsState(dom, CONTROL_STATE.MANUAL);
     }
   });
 
   dom.btnStep?.addEventListener('click', () => {
-    console.log('[ui] Step → metabolizm, środowisko, rozmnażanie i walka.');
+    console.log('[ui] Step → metabolizm, środowisko, zachowania kierunkowe i walka.');
     const world = simulation.stepOnce();
     if (!world) return;
 
     renderWorldIfAvailable(dom);
     updateStatsPanel(dom);
+    updateSelectedCreaturePanel(dom, simulation.getSelectedCreature());
 
     if (world.getAliveCount() === 0) {
       console.info('[ui] Wszystkie istoty zmarły – rozpocznij nowy świat lub zresetuj.');
@@ -336,10 +425,12 @@ function attachButtonActions(dom) {
       () => {
         renderWorldIfAvailable(dom);
         updateStatsPanel(dom);
+        updateSelectedCreaturePanel(dom, simulation.getSelectedCreature());
       },
       () => {
         renderWorldIfAvailable(dom);
         updateStatsPanel(dom);
+        updateSelectedCreaturePanel(dom, simulation.getSelectedCreature());
         const world = simulation.getWorld();
         if (world && world.getAliveCount() > 0) {
           setControlsState(dom, CONTROL_STATE.MANUAL);
@@ -374,6 +465,7 @@ function attachButtonActions(dom) {
     }
     renderWorldIfAvailable(dom);
     updateStatsPanel(dom);
+    updateSelectedCreaturePanel(dom, simulation.getSelectedCreature());
   });
 
   dom.btnReset?.addEventListener('click', () => {
@@ -382,6 +474,7 @@ function attachButtonActions(dom) {
     renderWorldIfAvailable(dom);
     updateStatsPanel(dom);
     updateSpeedDisplay(dom);
+    updateSelectedCreaturePanel(dom, null);
     setControlsState(dom, CONTROL_STATE.INITIAL);
   });
 }
@@ -403,8 +496,10 @@ export function initUI() {
   renderWorldIfAvailable(dom);
   updateStatsPanel(dom);
   updateSpeedDisplay(dom);
+  updateSelectedCreaturePanel(dom, null);
 
   attachButtonActions(dom);
+  attachCanvasSelection(dom);
 
-  console.log('[ui] Interfejs gotowy – konfiguracja parametrów, rozmnażanie i autotryb włączone.');
+  console.log('[ui] Interfejs gotowy – konfiguracja parametrów, DNA oraz podgląd organizmów aktywny.');
 }

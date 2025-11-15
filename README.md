@@ -53,3 +53,13 @@ Jeżeli GitHub wyświetla komunikat **“This branch has conflicts that must be 
    ```
 
 Alternatywnie można użyć przycisku **Resolve conflicts** bezpośrednio w interfejsie GitHuba, a po zapisaniu zmian wykonać „Commit merge”.
+
+### Co oznaczają opcje „current”, „incoming” i „both”
+
+Podczas rozwiązywania konfliktu w edytorze GitHub pojawiają się przyciski:
+
+* **Accept current change** – zachowuje fragment kodu pochodzący z Twojej gałęzi (tej, na której pracujesz).
+* **Accept incoming change** – zachowuje fragment, który pochodzi z gałęzi, do której się scalasz (np. `main`).
+* **Accept both changes** – wstawia kolejno oba fragmenty; przydatne, gdy trzeba połączyć logikę z obu gałęzi i dopiero ręcznie je dopracować.
+
+Jeżeli żadna z opcji nie odpowiada dokładnie temu, co chcesz uzyskać, możesz kliknąć **Mark as resolved** dopiero po ręcznej edycji fragmentu – usuń znaczniki konfliktu i wpisz własną, poprawną wersję kodu. Po zapisaniu zmian i oznaczeniu konfliktu jako rozwiązanego kliknij **Commit merge**.
